@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#4f46e5">
+<!-- Raccourci écran d'accueil iOS : lance en plein écran comme une appli -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Prof Audio">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Crect width='180' height='180' rx='40' fill='%236366f1'/%3E%3Ctext x='90' y='124' font-size='96' text-anchor='middle'%3E%F0%9F%8E%A7%3C/text%3E%3C/svg%3E">
+<title>Prof Audio — Révision oral</title>
+<style>
+  :root{
+    --bg:#0f1020; --card:#1b1d33; --card2:#23264a; --accent:#6366f1;
+    --accent2:#22d3ee; --ok:#22c55e; --ko:#ef4444; --txt:#eef0ff; --mut:#9aa0c8;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:radial-gradient(1200px 600px at 50% -10%,#26285a,#0f1020);color:var(--txt);
+    min-height:100vh;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:560px;margin:0 auto;padding:18px 16px 40px}
+  h1{font-size:22px;margin:6px 0 2px;text-align:center}
+  .sub{color:var(--mut);text-align:center;font-size:13px;margin-bottom:18px}
+  .grid{display:grid;gap:12px}
+  .card{background:linear-gradient(160deg,var(--card2),var(--card));border:1px solid #ffffff14;
+    border-radius:18px;padding:16px;box-shadow:0 8px 30px #0006}
+  button{font-family:inherit;border:0;cursor:pointer;color:#fff}
+  .btn{display:flex;align-items:center;gap:12px;width:100%;background:var(--card2);
+    border:1px solid #ffffff14;border-radius:14px;padding:16px;font-size:17px;color:var(--txt);text-align:left}
+  .btn .emo{font-size:24px}
+  .btn small{display:block;color:var(--mut);font-size:12.5px;margin-top:2px;font-weight:400}
+  .btn b{font-weight:600}
+  .matiere{border-left:5px solid var(--accent)}
+  .m1{border-color:#f59e0b}.m2{border-color:#22d3ee}.m3{border-color:#a78bfa}
+  .pill{display:inline-block;background:var(--accent);padding:6px 12px;border-radius:999px;
+    font-size:13px;margin:0 6px 0 0}
+  .top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .back{background:#ffffff14;border-radius:10px;padding:9px 13px;font-size:15px}
+  .big{font-size:19px;line-height:1.45;margin:10px 0}
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .row button{flex:1;min-width:120px;background:var(--accent);border-radius:12px;padding:15px;font-size:16px;font-weight:600}
+  .row .ghost{background:#ffffff14}
+  .speaker{display:flex;align-items:flex-start;gap:10px;margin:12px 0;opacity:.45;transition:.2s}
+  .speaker.active{opacity:1}
+  .av{width:38px;height:38px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .avA{background:#6366f1}.avB{background:#22d3ee;color:#06283d}
+  .bub{background:var(--card2);border-radius:14px;padding:11px 13px;font-size:15.5px;line-height:1.4}
+  .speaker.active .bub{background:#33376a}
+  input[type=text]{width:100%;padding:15px;border-radius:12px;border:1px solid #ffffff22;
+    background:#0c0d1c;color:#fff;font-size:16px;margin-top:8px}
+  .verdict{border-radius:12px;padding:13px;margin-top:12px;font-size:15.5px;line-height:1.45}
+  .vok{background:#14532d;border:1px solid var(--ok)}
+  .vko{background:#4c1d24;border:1px solid var(--ko)}
+  .score{font-size:15px;color:var(--mut);text-align:center;margin-top:8px}
+  .progress{height:6px;background:#ffffff14;border-radius:999px;overflow:hidden;margin:6px 0 14px}
+  .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .mic{background:var(--accent2);color:#06283d}
+  .hidden{display:none}
+  .note{font-size:12.5px;color:var(--mut);text-align:center;margin-top:16px;line-height:1.5}
+  select{width:100%;padding:12px;border-radius:10px;background:#0c0d1c;color:#fff;border:1px solid #ffffff22;font-size:15px;margin-top:6px}
+  label{font-size:13px;color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+/* ===================== CONTENU (basé sur tes cours) ===================== */
+/* podcast : tableau de répliques {v:'A'|'B', t:"..."}  — A = Léa (prof), B = Tom (curieux) */
+/* quiz : {q, r, k:[[synonymes],[...]]} */
+
+const MATIERES = {
+  web: {
+    nom:"Dév Web — HTML / CSS / PHP", emo:"🌐", cls:"m1",
+    podcast:[
+      {v:'A',t:"Salut ! Aujourd'hui on révise le dév web pour ton oral. On commence par le plus important : HTML."},
+      {v:'B',t:"Vas-y, c'est quoi HTML exactement ?"},
+      {v:'A',t:"HTML veut dire HyperText Markup Language. C'est un langage de balisage qui sert à structurer le contenu d'une page. Retiens bien : il structure, il ne décore pas."},
+      {v:'B',t:"Et la décoration alors, c'est qui ?"},
+      {v:'A',t:"C'est le CSS ! Les feuilles de style en cascade. Couleurs, polices, mise en page, tout ça c'est le CSS. Une balise HTML va souvent par paire, une ouvrante et une fermante. Sauf les orphelines comme image ou saut de ligne qui ne se ferment pas."},
+      {v:'B',t:"Un piège classique à l'oral ?"},
+      {v:'A',t:"Oui : sur un champ de formulaire, l'attribut name est obligatoire, sinon la donnée n'arrive jamais côté PHP. Note-le, ils adorent cette question."},
+      {v:'B',t:"Justement, parle-moi du CSS un peu plus."},
+      {v:'A',t:"Trois façons d'appliquer du CSS : en ligne avec l'attribut style, interne dans une balise style, ou externe dans un fichier point css. L'externe est le plus propre. Et n'oublie pas le modèle de boîte : chaque élément est une boîte, avec le contenu, le padding la marge intérieure, la bordure, et la margin la marge extérieure."},
+      {v:'B',t:"Margin et padding, je confonds toujours."},
+      {v:'A',t:"Astuce : padding est à l'intérieur, entre le contenu et la bordure. Margin est à l'extérieur, entre deux boîtes. Padding = intérieur, margin = extérieur."},
+      {v:'B',t:"OK ! Et PHP dans tout ça ?"},
+      {v:'A',t:"PHP, c'est le langage côté serveur. Le code est exécuté par le serveur, qui renvoie du HTML. Le navigateur ne voit jamais ton PHP. Pour récupérer un formulaire, tu utilises les superglobales : POST quand les données sont sensibles et cachées, GET quand elles passent dans l'URL et sont visibles."},
+      {v:'B',t:"Donc un mot de passe, jamais en GET !"},
+      {v:'A',t:"Exactement, jamais. Et pour le stocker, on le hache avec password hash, jamais en clair. À l'affichage on se protège des failles XSS avec htmlspecialchars. Dernier point : une session se démarre avec session start, tout en haut du fichier, pour garder l'utilisateur connecté entre les pages."},
+      {v:'B',t:"Super clair. On passe au quiz quand tu veux !"},
+      {v:'A',t:"Récapitule à voix haute : HTML structure, CSS décore, PHP côté serveur, name obligatoire, POST pour le sensible, hash pour les mots de passe. À toi de jouer."}
+    ],
+    quiz:[
+      ["Que signifie HTML et à quoi sert-il ?","HyperText Markup Language : un langage de balisage qui structure le contenu d'une page.",[["hypertext","hypertexte"],["balisage","balise"],["structure","structurer","structurel"]]],
+      ["Différence entre une balise paire et une balise orpheline ?","La paire a une ouvrante et une fermante. L'orpheline ne se ferme pas, comme br, img ou input.",[["ferme","fermante","fermer"],["orpheline","seule","img","br","input"]]],
+      ["À quoi sert l'attribut alt sur une image ?","Texte alternatif affiché si l'image ne charge pas, et lu par les lecteurs d'écran.",[["alternatif","remplace","charge","accessibilite","lecteur"]]],
+      ["Quel attribut est indispensable sur un input pour récupérer sa valeur en PHP ?","L'attribut name.",[["name"]]],
+      ["Que signifie CSS et à quoi sert-il ?","Cascading Style Sheets : il gère la présentation et la mise en forme du HTML.",[["cascading","cascade"],["style","presentation","forme","decore","decorer"]]],
+      ["Quelles sont les trois façons d'appliquer du CSS ?","En ligne (style), interne (balise style), externe (fichier css via link). L'externe est recommandé.",[["ligne","inline"],["interne"],["externe","fichier","link"]]],
+      ["Qu'est-ce que le modèle de boîte ?","Chaque élément est une boîte : contenu, padding, border, margin.",[["boite","box"],["padding"],["margin","marge"],["border","bordure"]]],
+      ["Différence entre margin et padding ?","Margin = marge extérieure entre les boîtes ; padding = marge intérieure entre bordure et contenu.",[["margin","exterieur","exterieure"],["padding","interieur","interieure"]]],
+      ["Comment aligner plusieurs éléments côte à côte simplement ?","Avec Flexbox : display flex.",[["flex","flexbox"]]],
+      ["PHP s'exécute côté client ou côté serveur ?","Côté serveur. Le navigateur ne reçoit que le HTML.",[["serveur"]]],
+      ["Différence entre GET et POST ?","GET passe les données dans l'URL (visibles), POST dans le corps de la requête (cachées), pour le sensible.",[["url","visible"],["post","corps","cache","sensible"]]],
+      ["Comment sécurise-t-on un mot de passe stocké ?","On le hache avec password_hash, jamais en clair, et on vérifie avec password_verify.",[["hache","hash","hachage","chiffr"],["clair","password"]]],
+      ["Comment se protège-t-on d'une faille XSS à l'affichage ?","En échappant les données avec htmlspecialchars.",[["htmlspecialchars","echapp","special"]]],
+      ["Qu'est-ce qu'une session et comment la démarre-t-on ?","Un mécanisme qui garde l'utilisateur entre les pages. On la démarre avec session_start en début de fichier.",[["garde","conserve","entre","memoire","connect"],["session_start","session start"]]]
+    ]
+  },
+
+  python: {
+    nom:"Python", emo:"🐍", cls:"m2",
+    podcast:[
+      {v:'A',t:"On attaque Python. La base, c'est la variable. C'est un nom qui pointe vers une valeur en mémoire. On la crée avec le signe égal, et on ne déclare pas le type : c'est le typage dynamique."},
+      {v:'B',t:"C'est quoi le typage dynamique déjà ?"},
+      {v:'A',t:"Ça veut dire que Python devine le type tout seul, et qu'une variable peut même changer de type en cours de route. Les types principaux : int l'entier, float le nombre à virgule, str le texte, bool vrai ou faux, et None l'absence de valeur."},
+      {v:'B',t:"J'ai un piège : input me renvoie quoi ?"},
+      {v:'A',t:"Excellent piège ! input renvoie toujours une chaîne, un str, même si tu tapes un nombre. Il faut convertir avec int. Ils posent souvent la question."},
+      {v:'B',t:"Et les conditions ?"},
+      {v:'A',t:"if, elif, else. En Python le bloc est délimité par l'indentation, quatre espaces, et la ligne se termine par deux points. Pas d'accolades comme dans d'autres langages."},
+      {v:'B',t:"Les boucles maintenant."},
+      {v:'A',t:"Deux boucles. For parcourt une séquence connue, comme une liste. While répète tant qu'une condition est vraie. break sort de la boucle, continue saute au tour suivant."},
+      {v:'B',t:"Et pour stocker plusieurs valeurs ?"},
+      {v:'A',t:"Les structures de données. Une liste entre crochets, ordonnée et modifiable. Un tuple entre parenthèses, immuable, on ne peut pas le modifier. Un dictionnaire entre accolades, qui stocke des paires clé deux points valeur. Le premier élément d'une liste est à l'index zéro."},
+      {v:'B',t:"Les fonctions, vite fait ?"},
+      {v:'A',t:"On définit une fonction avec def. return renvoie un résultat. Sans return, la fonction renvoie None. Et attention : une variable créée dans une fonction est locale, elle n'existe pas dehors."},
+      {v:'B',t:"Ils risquent de me parler de mon projet contactbook, non ?"},
+      {v:'A',t:"Oui ! Résume-le : c'est un carnet de contacts en ligne de commande qui ajoute, affiche, recherche, modifie et supprime des contacts. Chaque contact est un dictionnaire, tous les contacts forment une liste. Et les données sont chiffrées avec Fernet, un chiffrement symétrique : la même clé sert à chiffrer et déchiffrer."},
+      {v:'B',t:"Pourquoi chiffrer ?"},
+      {v:'A',t:"Pour que même si quelqu'un ouvre le fichier, il ne puisse pas lire les contacts sans la clé. Pense aussi à dire PEP 8, la convention de style, et DRY, ne te répète pas. Allez, au quiz !"}
+    ],
+    quiz:[
+      ["Qu'est-ce qu'une variable en Python ?","Un nom qui désigne une valeur stockée en mémoire, créé avec le signe égal.",[["nom","designe","pointe"],["valeur","memoire"]]],
+      ["Cite les principaux types de données Python.","int, float, str, bool, et NoneType.",[["int","entier"],["float","virgule","decimal"],["str","chaine","texte"],["bool","booleen"]]],
+      ["Qu'est-ce que le typage dynamique ?","Le type est déterminé automatiquement et peut changer en cours d'exécution.",[["automatique","deduit","seul","devine"],["change","type","pas declare"]]],
+      ["Que renvoie input et quelle précaution prendre ?","input renvoie toujours une chaîne (str) ; il faut convertir avec int ou float.",[["chaine","str","texte"],["convert","int","cast"]]],
+      ["Comment est délimité un bloc de code en Python ?","Par l'indentation, quatre espaces.",[["indentation","espace","tabulation"]]],
+      ["Différence entre une boucle for et une boucle while ?","for parcourt une séquence connue ; while répète tant qu'une condition est vraie.",[["for","parcour","sequence"],["while","tant que","condition"]]],
+      ["Que fait break et que fait continue ?","break sort de la boucle ; continue passe au tour suivant.",[["break","sort","quitte"],["continue","suivant","saute"]]],
+      ["Différence entre une liste et un tuple ?","La liste est modifiable, le tuple est immuable.",[["liste","modifiable"],["tuple","immuable","non modifiable"]]],
+      ["Qu'est-ce qu'un dictionnaire ?","Une structure de paires clé-valeur ; on accède à une valeur par sa clé.",[["cle","key"],["valeur","value"]]],
+      ["Quel est l'index du premier élément d'une liste ?","Zéro.",[["0","zero"]]],
+      ["Comment ajoute-t-on un élément à une liste ?","Avec la méthode append.",[["append"]]],
+      ["Comment définit-on une fonction et à quoi sert return ?","On la définit avec def ; return renvoie un résultat et termine la fonction.",[["def"],["return","renvoie","retourne"]]],
+      ["Que renvoie une fonction sans return ?","None.",[["none","rien"]]],
+      ["Qu'est-ce que la portée d'une variable ?","La zone où elle existe ; une variable locale n'est pas accessible hors de sa fonction.",[["locale","local"],["fonction","dehors","zone","accessible"]]],
+      ["En une phrase, que fait ton projet contactbook ?","Un carnet de contacts en ligne de commande qui gère des contacts en chiffrant les données avec Fernet.",[["contact","carnet"],["chiffr","fernet","crypt"]]]
+    ]
+  },
+
+  reseaux: {
+    nom:"Réseaux — OSI / adressage", emo:"🛰️", cls:"m3",
+    podcast:[
+      {v:'A',t:"Les réseaux maintenant, et la star de l'oral : le modèle OSI. OSI veut dire Open System Interconnection, proposé par l'ISO dans les années 70. Il décrit la communication en sept couches."},
+      {v:'B',t:"Sept couches, j'ai du mal à les retenir."},
+      {v:'A',t:"Moyen mnémotechnique du bas vers le haut : Partout Là-bas Roule Ton Super Petit Avion. Physique, Liaison, Réseau, Transport, Session, Présentation, Application."},
+      {v:'B',t:"Et les unités de données ?"},
+      {v:'A',t:"Retiens les quatre du bas : la Physique transporte des bits, la Liaison des trames, le Réseau des paquets, le Transport des segments. Bit, trame, paquet, segment."},
+      {v:'B',t:"Les adresses, c'est quelle couche ?"},
+      {v:'A',t:"Point crucial : l'adresse MAC est à la couche 2, la Liaison. L'adresse IP est à la couche 3, le Réseau. Ne les inverse jamais."},
+      {v:'B',t:"Et les équipements réseau ?"},
+      {v:'A',t:"Le Hub est couche 1, il ne segmente pas les collisions. Le Switch est couche 2, il travaille avec l'adresse MAC. Le Routeur est couche 3, il travaille avec l'IP et c'est le seul à séparer les domaines de broadcast. Une box, d'ailleurs, c'est un routeur plus un switch plus un modem."},
+      {v:'B',t:"TCP contre UDP, la question piège."},
+      {v:'A',t:"TCP est avec connexion et fiable, comme une lettre recommandée avec accusé de réception. UDP est sans connexion, rapide mais sans garantie, comme une lettre simple."},
+      {v:'B',t:"Passons à l'adressage. Le masque, ça me stresse."},
+      {v:'A',t:"Reste simple. Le slash, par exemple slash 24, c'est le masque en notation CIDR. Slash 24 égale 255.255.255.0. Le pas se calcule : 256 moins la valeur du masque. Et l'adresse de broadcast, c'est l'adresse réseau plus le pas moins un."},
+      {v:'B',t:"Et pour dimensionner un réseau pour un groupe de personnes ?"},
+      {v:'A',t:"Tu prends le nombre de personnes plus 2, parce qu'il faut réserver l'adresse réseau et l'adresse de broadcast. Puis tu prends la puissance de 2 supérieure ou égale. Le CIDR vaut 32 moins l'exposant. Exemple : 50 personnes, plus 2 égale 52, la puissance de 2 au-dessus c'est 64, soit 2 puissance 6, donc slash 26."},
+      {v:'B',t:"Un masque impossible, ça ressemble à quoi ?"},
+      {v:'A',t:"Un masque, c'est que des 1 puis que des 0, jamais d'alternance. Donc 255.254.128.0 est impossible car un bit se rallume après un zéro. Récapitule : OSI sept couches, MAC couche 2, IP couche 3, seul le routeur sépare le broadcast. Allez, quiz !"}
+    ],
+    quiz:[
+      ["Que signifie OSI et qui l'a proposé ?","Open System Interconnection, proposé par l'ISO dans les années 70.",[["open","interconnexion","interconnection"],["iso"]]],
+      ["Combien de couches a le modèle OSI ? Cite-les dans l'ordre.","7 : Physique, Liaison, Réseau, Transport, Session, Présentation, Application.",[["7","sept"],["physique"],["liaison"],["transport"],["application"]]],
+      ["Quelle est l'unité de la couche Liaison ?","La trame.",[["trame"]]],
+      ["Quelle est l'unité de la couche Réseau ?","Le paquet.",[["paquet"]]],
+      ["Quelle est l'unité de la couche Transport ?","Le segment.",[["segment"]]],
+      ["À quelle couche se situe l'adresse IP ?","Couche 3, le Réseau.",[["3","trois","reseau"]]],
+      ["À quelle couche se situe l'adresse MAC ?","Couche 2, la Liaison.",[["2","deux","liaison"]]],
+      ["Quel équipement ne segmente pas les domaines de collision ?","Le Hub (couche 1).",[["hub","concentrateur","repeteur"]]],
+      ["Quel équipement sépare les domaines de broadcast ?","Seul le Routeur.",[["routeur"]]],
+      ["Avec quelle adresse travaille un switch ?","Avec l'adresse MAC (couche 2).",[["mac"]]],
+      ["Différence entre TCP et UDP ?","TCP : avec connexion, fiable. UDP : sans connexion, rapide, sans garantie.",[["tcp","connexion","fiable"],["udp","sans","rapide","garantie"]]],
+      ["Que contient une box ?","Un routeur, un switch et un modem.",[["routeur"],["switch"],["modem"]]],
+      ["Combien de couches a le modèle DoD (TCP/IP) ?","4 couches.",[["4","quatre"]]],
+      ["Que représente le /24 dans 192.168.2.5 /24 ?","Le masque de sous-réseau en notation CIDR (255.255.255.0).",[["masque","sous-reseau","cidr"]]],
+      ["Donne le masque correspondant à un /26.","255.255.255.192.",[["192"]]],
+      ["Pour un groupe de 50 personnes, quel CIDR ?","50 + 2 = 52, puissance de 2 ≥ = 64 (2^6), donc /26.",[["64"],["26"]]],
+      ["Comment calcule-t-on l'adresse de broadcast ?","Adresse réseau + le pas − 1 (le pas = 256 − valeur du masque).",[["pas","256"],["moins 1","-1","moins un"]]]
+    ]
+  }
+};
+
+/* ===================== VOIX ===================== */
+let VOICES=[], vA=null, vB=null;
+function pickVoices(){
+  VOICES = speechSynthesis.getVoices();
+  const fr = VOICES.filter(v=>/^fr/i.test(v.lang));
+  const pool = fr.length?fr:VOICES;
+  // voix A : préfère féminine; voix B : une autre voix distincte
+  const female = pool.find(v=>/(elo|julie|aud|amelie|female|google|siri.*1|virginie|c[ée]line)/i.test(v.name));
+  vA = female || pool[0] || null;
+  vB = pool.find(v=>v!==vA) || vA;
+}
+speechSynthesis.onvoiceschanged = pickVoices;
+pickVoices();
+
+function speak(text, who, onend){
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang='fr-FR';
+  if(who==='B'){ u.voice=vB; u.pitch=0.85; u.rate=1.02; }
+  else { u.voice=vA; u.pitch=1.05; u.rate=0.97; }
+  if(onend) u.onend=onend;
+  speechSynthesis.speak(u);
+  return u;
+}
+function stopSpeak(){ speechSynthesis.cancel(); }
+
+/* ===================== ÉVALUATION RÉPONSE ===================== */
+function norm(s){return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim();}
+function evaluer(rep, kgroups){
+  const r = norm(rep); if(!r) return false;
+  const mots = new Set(r.replace(/[,.''-]/g," ").split(/\s+/));
+  let ok=0;
+  for(const g of kgroups){
+    if(g.some(syn=>{const s=norm(syn); return /[ \-\/]/.test(s)? r.includes(s): mots.has(s);})) ok++;
+  }
+  return ok >= Math.ceil(kgroups.length/2);
+}
+
+/* ===================== RECONNAISSANCE VOCALE (optionnelle) ===================== */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let reco=null;
+function listen(onResult){
+  if(!SR){ alert("La saisie vocale n'est pas dispo sur ce navigateur — tape ta réponse."); return; }
+  reco = new SR(); reco.lang='fr-FR'; reco.interimResults=false; reco.maxAlternatives=1;
+  reco.onresult = e=> onResult(e.results[0][0].transcript);
+  reco.onerror = ()=>{};
+  reco.start();
+}
+
+/* ===================== UI ===================== */
+const app = document.getElementById('app');
+function h(html){app.innerHTML=html;}
+function go(fn){stopSpeak(); fn();}
+
+function home(){
+  stopSpeak();
+  let cards="";
+  for(const key in MATIERES){const m=MATIERES[key];
+    cards += `<button class="btn matiere ${m.cls}" onclick="matiere('${key}')">
+      <span class="emo">${m.emo}</span><span><b>${m.nom}</b><small>Cours podcast · Quiz vocal</small></span></button>`;
+  }
+  h(`<h1>🎧 Prof Audio</h1><div class="sub">Révision orale — Dév web · Python · Réseaux</div>
+    <div class="grid">${cards}
+    <button class="btn" style="border-left:5px solid #22c55e" onclick="examen()">
+      <span class="emo">🎓</span><span><b>Examen blanc</b><small>15 questions, les 3 matières mélangées, noté /20</small></span></button>
+    </div>
+    <div class="note">Mets le son 🔊. Le mode podcast lit le cours à 2 voix.<br>
+    Astuce : « Partager → Sur l'écran d'accueil » pour l'avoir comme une appli.</div>`);
+}
+
+function matiere(key){
+  const m=MATIERES[key];
+  h(`<div class="top"><button class="back" onclick="home()">←</button><b>${m.emo} ${m.nom}</b></div>
+    <div class="grid">
+      <button class="btn" onclick="podcast('${key}')"><span class="emo">🎙️</span>
+        <span><b>Écouter le cours</b><small>Émission à 2 voix, type podcast</small></span></button>
+      <button class="btn" onclick="quiz('${key}')"><span class="emo">❓</span>
+        <span><b>Quiz</b><small>Il t'interroge et corrige à l'oral</small></span></button>
+    </div>`);
+}
+
+/* ----- PODCAST ----- */
+let pIdx=0, pArr=[], pPlaying=false, pKey=null;
+function podcast(key){
+  pKey=key; pArr=MATIERES[key].podcast; pIdx=0; pPlaying=true;
+  renderPodcast(); playLine();
+}
+function renderPodcast(){
+  const m=MATIERES[pKey];
+  let lines = pArr.map((l,i)=>`<div class="speaker ${i===pIdx?'active':''}" id="sp${i}">
+    <div class="av av${l.v}">${l.v==='A'?'👩‍🏫':'🧑‍🎓'}</div><div class="bub">${l.t}</div></div>`).join("");
+  h(`<div class="top"><button class="back" onclick="go(()=>matiere('${pKey}'))">←</button><b>🎙️ ${m.nom}</b></div>
+    <div class="progress"><i style="width:${(pIdx+1)/pArr.length*100}%"></i></div>
+    ${lines}
+    <div class="row">
+      <button class="ghost" onclick="pPrev()">⏮︎</button>
+      <button onclick="pToggle()" id="ppBtn">${pPlaying?'⏸︎ Pause':'▶︎ Lire'}</button>
+      <button class="ghost" onclick="pNext()">⏭︎</button>
+    </div>`);
+  const el=document.getElementById('sp'+pIdx); if(el) el.scrollIntoView({block:'center',behavior:'smooth'});
+}
+function playLine(){
+  if(pIdx>=pArr.length){pPlaying=false;renderPodcast();return;}
+  renderPodcast();
+  speak(pArr[pIdx].t, pArr[pIdx].v, ()=>{ if(pPlaying){ pIdx++; if(pIdx<pArr.length) playLine(); else {pPlaying=false; renderPodcast();} }});
+}
+function pToggle(){ if(pPlaying){pPlaying=false;stopSpeak();renderPodcast();} else {pPlaying=true;playLine();} }
+function pNext(){ stopSpeak(); if(pIdx<pArr.length-1){pIdx++;} pPlaying=true; playLine(); }
+function pPrev(){ stopSpeak(); if(pIdx>0){pIdx--;} pPlaying=true; playLine(); }
+
+/* ----- QUIZ / EXAMEN ----- */
+let qList=[], qIdx=0, qScore=0, qTitle="", qBackKey=null;
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+function quiz(key){
+  qBackKey=key; qTitle=MATIERES[key].nom;
+  qList=shuffle(MATIERES[key].quiz); qIdx=0; qScore=0; askQ();
+}
+function examen(){
+  qBackKey=null; qTitle="Examen blanc";
+  let pool=[];
+  for(const k in MATIERES) for(const q of MATIERES[k].quiz) pool.push(q);
+  qList=shuffle(pool).slice(0,15); qIdx=0; qScore=0; askQ();
+}
+function askQ(){
+  if(qIdx>=qList.length) return finQuiz();
+  const [q,r,k]=qList[qIdx];
+  const back = qBackKey? `go(()=>matiere('${qBackKey}'))` : `go(home)`;
+  h(`<div class="top"><button class="back" onclick="${back}">←</button><b>${qTitle}</b></div>
+    <div class="progress"><i style="width:${qIdx/qList.length*100}%"></i></div>
+    <div class="score">Question ${qIdx+1}/${qList.length} · Score ${qScore}</div>
+    <div class="card"><div class="big">${q}</div>
+      <input type="text" id="rep" placeholder="Ta réponse..." autocomplete="off">
+      <div class="row">
+        <button class="mic" onclick="micAnswer()">🎤 Parler</button>
+        <button onclick="valider()">Valider</button>
+      </div>
+    </div>`);
+  speak(q,'A');
+  setTimeout(()=>{const i=document.getElementById('rep'); if(i) i.focus();},200);
+}
+function micAnswer(){ listen(t=>{ const i=document.getElementById('rep'); if(i){i.value=t; valider();} }); }
+function valider(){
+  const v=document.getElementById('rep').value;
+  const [q,r,k]=qList[qIdx];
+  const ok=evaluer(v,k); if(ok) qScore++;
+  stopSpeak();
+  const verdict = ok
+    ? `<div class="verdict vok"><b>✅ Bonne réponse !</b><br>Formulation idéale : ${r}</div>`
+    : `<div class="verdict vko"><b>❌ Pas tout à fait.</b><br>Réponse attendue : ${r}</div>`;
+  const back = qBackKey? `go(()=>matiere('${qBackKey}'))` : `go(home)`;
+  h(`<div class="top"><button class="back" onclick="${back}">←</button><b>${qTitle}</b></div>
+    <div class="card"><div class="big">${q}</div>
+      <div style="color:var(--mut);font-size:14px">Ta réponse : « ${v||'—'} »</div>
+      ${verdict}</div>
+    <div class="row">
+      <button onclick="${ok?'next()':'selfOk()'}">${ok?'Suivante →':"Je l'avais juste"}</button>
+      <button class="ghost" onclick="next()">${ok?'':'Suivante →'}</button>
+    </div>`);
+  speak(ok? "Bonne réponse, bravo. "+r : "Pas tout à fait. La réponse attendue : "+r, 'A');
+}
+function selfOk(){ qScore++; next(); }
+function next(){ stopSpeak(); qIdx++; askQ(); }
+function finQuiz(){
+  const note=Math.round(qScore/qList.length*200)/10;
+  let msg = note>=16?"Excellent, tu es prêt pour lundi ! 🎉"
+    : note>=12?"Bien ! Reprends les questions ratées et refais un tour."
+    : note>=8?"Tu progresses — repasse par le cours podcast puis refais le quiz."
+    : "Pas de panique : écoute d'abord le cours podcast, puis reviens.";
+  const back = qBackKey? `go(()=>matiere('${qBackKey}'))` : `go(home)`;
+  h(`<div class="top"><button class="back" onclick="go(home)">←</button><b>Résultat</b></div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:54px;font-weight:700">${note}<span style="font-size:24px;color:var(--mut)">/20</span></div>
+      <div class="score">${qScore} bonnes réponses sur ${qList.length}</div>
+      <div class="big">${msg}</div>
+    </div>
+    <div class="row"><button onclick="${back}">↻ Recommencer</button>
+      <button class="ghost" onclick="go(home)">Accueil</button></div>`);
+  speak(`Terminé. ${qScore} sur ${qList.length}, soit ${note} sur 20. ${msg}`,'A');
+}
+
+home();
+</script>
+</body>
+</html>
