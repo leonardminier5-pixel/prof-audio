@@ -61,6 +61,23 @@
   .note{font-size:12.5px;color:var(--mut);text-align:center;margin-top:16px;line-height:1.5}
   select{width:100%;padding:12px;border-radius:10px;background:#0c0d1c;color:#fff;border:1px solid #ffffff22;font-size:15px;margin-top:6px}
   label{font-size:13px;color:var(--mut)}
+  .chatwrap{padding-bottom:98px}
+  .msg{display:flex;gap:8px;margin:10px 0}
+  .msg.user{flex-direction:row-reverse}
+  .msg .b{max-width:82%;padding:11px 13px;border-radius:15px;font-size:15.5px;line-height:1.46;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere}
+  .msg.prof .b{background:var(--card2);border:1px solid #ffffff12}
+  .msg.user .b{background:var(--accent)}
+  .msg .b code{background:#0009;padding:1px 5px;border-radius:5px;font-size:13.5px}
+  .chatbar{position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:100%;max-width:560px;
+    background:#0c0d1cf2;backdrop-filter:blur(8px);border-top:1px solid #ffffff1a;padding:10px 12px;display:flex;gap:8px}
+  .chatbar input{margin:0}
+  .chatbar button{border-radius:12px;padding:0 16px;font-size:18px;background:var(--accent);flex:none}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+  .chip{background:#ffffff14;border-radius:999px;padding:9px 13px;font-size:13px;border:1px solid #ffffff1a;color:var(--txt)}
+  .thinking{color:var(--mut);font-style:italic;padding:8px 2px}
+  .srcs{font-size:12px;color:var(--mut);margin-top:7px}
+  .srcs a{color:var(--accent2);text-decoration:none}
+  ol{margin:10px 0;padding-left:20px}
 </style>
 </head>
 <body>
@@ -217,7 +234,7 @@ function speak(text, who, onend){
   speechSynthesis.speak(u);
   return u;
 }
-function stopSpeak(){ speechSynthesis.cancel(); }
+function stopSpeak(){ speechSynthesis.cancel(); if(window._profAudio){try{window._profAudio.pause();window._profAudio=null;}catch(e){}} }
 
 /* ===================== ÉVALUATION RÉPONSE ===================== */
 function norm(s){return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim();}
@@ -255,7 +272,10 @@ function home(){
       <span class="emo">${m.emo}</span><span><b>${m.nom}</b><small>Cours podcast · Quiz vocal</small></span></button>`;
   }
   h(`<h1>🎧 Prof Audio</h1><div class="sub">Révision orale — Dév web · Python · Réseaux</div>
-    <div class="grid">${cards}
+    <div class="grid">
+    <button class="btn" style="border-left:5px solid #22d3ee;background:linear-gradient(160deg,#173a52,#23264a)" onclick="go(chatScreen)">
+      <span class="emo">💬</span><span><b>Discuter avec le prof IA</b><small>Conversation libre · connaît tes cours · cherche sur le web · voix naturelle</small></span></button>
+    ${cards}
     <button class="btn" style="border-left:5px solid #22c55e" onclick="examen()">
       <span class="emo">🎓</span><span><b>Examen blanc</b><small>15 questions, les 3 matières mélangées, noté /20</small></span></button>
     </div>
@@ -373,6 +393,205 @@ function finQuiz(){
       <button class="ghost" onclick="go(home)">Accueil</button></div>`);
   speak(`Terminé. ${qScore} sur ${qList.length}, soit ${note} sur 20. ${msg}`,'A');
 }
+
+/* ============================================================
+   PROF IA — Google Gemini (chat + recherche web + voix neuronale)
+   ============================================================ */
+const CHAT_MODEL = "gemini-2.5-flash";              // modèle de discussion
+const TTS_MODEL  = "gemini-2.5-flash-preview-tts";  // modèle voix neuronale
+const TTS_VOICE  = "Kore";                           // voix (Kore, Puck, Charon, Aoede, Leda, Fenrir...)
+
+/* Mémoire du prof : résumé des cours de Léonard (sert de base de connaissances) */
+const COURS_CONTEXT = `
+CONNAISSANCES DES COURS DE LEONARD (etudiant B1 a PSTB, oral lundi) :
+
+== DEV WEB ==
+HTML (HyperText Markup Language) : langage de balisage qui STRUCTURE le contenu (pas la mise en forme). Balises paires (p, div) et orphelines (br, img, input, hr). Attribut name OBLIGATOIRE sur input pour recuperer la valeur en PHP. Lien = balise a avec href. Tableau : table>tr>th(en-tete)/td(donnee). Formulaire : form action+method.
+CSS (Cascading Style Sheets) : gere la presentation. 3 facons : en ligne (style), interne (balise style), externe (fichier .css via link, recommande). Selecteurs : .classe (reutilisable), #id (unique). Modele de boite : contenu + padding (interieur) + border + margin (exterieur). Flexbox (display:flex) pour aligner.
+PHP : langage COTE SERVEUR, le navigateur ne voit que le HTML. Variables avec dollar. == compare valeurs, === compare valeur ET type. foreach pour tableaux associatifs. Superglobales : POST (corps, donnees sensibles), GET (URL, visible), FILES, SESSION, SERVER. session_start() en debut de fichier. Securite : password_hash()/password_verify() (jamais en clair), htmlspecialchars() contre XSS, isset() pour verifier l'existence. Projet fil rouge : un site type Leboncoin (annonces) en groupe.
+
+== PYTHON ==
+Variable = nom vers une valeur en memoire, typage dynamique. Types : int, float, str, bool, None. input() renvoie TOUJOURS une str (convertir avec int()). Conditions if/elif/else, bloc delimite par INDENTATION (4 espaces) + deux-points. Operateurs : ==, !=, and, or, not. Boucles : for (sequence connue), while (tant que vrai), break (sort), continue (tour suivant), range(n)=0 a n-1. Structures : liste [] ordonnee modifiable, tuple () immuable, dictionnaire {} paires cle:valeur, index commence a 0, .append() pour ajouter. Fonctions : def, return (sans return renvoie None), variable locale = portee. Qualite : PEP 8, snake_case, constantes MAJUSCULES, DRY (ne te repete pas), try/except.
+PROJET PYTHON de Leonard = "contactbook.py" : carnet de contacts en ligne de commande (CLI) qui ajoute/affiche/recherche/modifie/supprime des contacts. Un contact = un dictionnaire (cles : numero, nom, prenom, telephone, email). Tous les contacts = une liste. Donnees CHIFFREES avec Fernet (chiffrement symetrique : meme cle pour chiffrer/dechiffrer, fichiers key.key et contacts.enc). Validation email/telephone sans regex. Point d'entree : if __name__=="__main__": main(). Pas de version graphique (contactbook_gui.py est vide).
+
+== RESEAUX ==
+Modele OSI (Open System Interconnection, propose par l'ISO, annees 70) : 7 couches. Du BAS vers le HAUT : Physique, Liaison, Reseau, Transport, Session, Presentation, Application. Mnemo : "Partout La-bas Roule Ton Super Petit Avion". Unites : Physique=bit, Liaison=trame, Reseau=paquet, Transport=segment. Adresse MAC = couche 2 (Liaison). Adresse IP = couche 3 (Reseau). Equipements : Hub (couche 1, ne segmente pas les collisions), Switch (couche 2, adresse MAC), Routeur (couche 3, IP, SEUL a separer les domaines de broadcast). Box = routeur + switch + modem. TCP = avec connexion, fiable (lettre recommandee) ; UDP = sans connexion, rapide, sans garantie (lettre simple). CSMA/CD gere les collisions Ethernet. Spanning-Tree (802.1d) evite les boucles. Modele DoD/TCP-IP = 4 couches.
+ADRESSAGE : /n = notation CIDR. /24 = 255.255.255.0, /26 = 255.255.255.192. Pas = 256 - valeur du masque. Adresse reseau = plus grand multiple du pas <= octet ; broadcast = adresse reseau + pas - 1. Dimensionner un groupe : (nb personnes + 2) puis puissance de 2 superieure ou egale, CIDR = 32 - exposant (ex : 50 pers -> 52 -> 64=2^6 -> /26). Masque impossible si alternance de 0 et 1, si octet > 255, ou si != 4 octets.
+`;
+
+const SYSTEM_PROMPT = `Tu es le professeur particulier de Leonard, etudiant debutant (niveau B1) a l'ecole PSTB. Il prepare un ORAL lundi sur 3 matieres : developpement web (HTML/CSS/PHP), Python et reseaux.
+
+TON ROLE :
+- Tu es pedagogue, bienveillant, encourageant. Tu expliques simplement, avec des exemples concrets.
+- Tu adaptes ton niveau a un debutant. Tu evites le jargon inutile, et quand tu utilises un terme technique tu l'expliques.
+- Quand Leonard se trompe, tu corriges gentiment en expliquant POURQUOI, puis tu reformules la bonne reponse.
+- Tu peux l'interroger comme a un oral : pose UNE question a la fois, attends sa reponse, corrige, puis enchaine.
+- Tu donnes des exercices quand c'est pertinent et tu corriges ses reponses.
+
+STYLE (TRES IMPORTANT, tes reponses sont LUES A VOIX HAUTE) :
+- Reponds en francais, sur un ton naturel et conversationnel, comme un vrai prof qui parle.
+- Sois CONCIS : 2 a 5 phrases en general. Developpe seulement si Leonard le demande.
+- Evite les listes a puces, les symboles, le code long et le markdown lourd : ca se lit mal a l'oral. Privilegie des phrases.
+- Une seule question a la fois quand tu l'interroges.
+
+RECHERCHE WEB : si une question sort de tes connaissances de cours, concerne une techno recente, ou demande une info factuelle precise/actuelle, utilise la recherche Google pour repondre juste. Sinon, appuie-toi sur les cours de Leonard ci-dessous.
+
+${COURS_CONTEXT}`;
+
+function getKey(){ return localStorage.getItem("gemini_key") || ""; }
+
+async function geminiGenerate(history){
+  const key = getKey();
+  const body = {
+    systemInstruction:{ parts:[{ text: SYSTEM_PROMPT }] },
+    contents: history.map(m=>({ role:m.role, parts:m.parts })),
+    tools:[{ google_search:{} }],
+    generationConfig:{ temperature:0.7 }
+  };
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/"+CHAT_MODEL+":generateContent?key="+encodeURIComponent(key);
+  const res = await fetch(url,{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
+  if(!res.ok){ let e; try{e=(await res.json()).error.message;}catch(_){e=await res.text();} throw new Error("Chat "+res.status+" — "+e); }
+  const data = await res.json();
+  const cand = data.candidates && data.candidates[0];
+  let text="";
+  if(cand && cand.content && cand.content.parts) text = cand.content.parts.map(p=>p.text||"").join("");
+  let sources=[];
+  const gm = cand && cand.groundingMetadata;
+  if(gm && gm.groundingChunks) sources = gm.groundingChunks.map(c=>c.web&&c.web.uri).filter(Boolean);
+  return { text: text.trim()||"(je n'ai pas de reponse, reformule ta question)", sources };
+}
+
+/* --- Voix neuronale Gemini : renvoie une URL audio (WAV) jouable --- */
+async function geminiTTS(text){
+  const key = getKey();
+  const body = {
+    contents:[{ parts:[{ text: text }] }],
+    generationConfig:{ responseModalities:["AUDIO"],
+      speechConfig:{ voiceConfig:{ prebuiltVoiceConfig:{ voiceName: TTS_VOICE } } } }
+  };
+  const url = "https://generativelanguage.googleapis.com/v1beta/models/"+TTS_MODEL+":generateContent?key="+encodeURIComponent(key);
+  const res = await fetch(url,{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
+  if(!res.ok) throw new Error("TTS "+res.status);
+  const data = await res.json();
+  const part = data.candidates[0].content.parts.find(p=>p.inlineData);
+  if(!part) throw new Error("TTS: pas d'audio");
+  return pcmToWavUrl(part.inlineData.data, part.inlineData.mimeType||"audio/L16;rate=24000");
+}
+function pcmToWavUrl(b64, mime){
+  const bin=atob(b64), n=bin.length, bytes=new Uint8Array(n);
+  for(let i=0;i<n;i++) bytes[i]=bin.charCodeAt(i);
+  let rate=24000; const m=/rate=(\d+)/.exec(mime); if(m) rate=parseInt(m[1],10);
+  const ch=1, bits=16, blockAlign=ch*bits/8, byteRate=rate*blockAlign;
+  const buf=new ArrayBuffer(44+bytes.length), v=new DataView(buf);
+  const ws=(o,s)=>{ for(let i=0;i<s.length;i++) v.setUint8(o+i,s.charCodeAt(i)); };
+  ws(0,"RIFF"); v.setUint32(4,36+bytes.length,true); ws(8,"WAVE"); ws(12,"fmt ");
+  v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,ch,true);
+  v.setUint32(24,rate,true); v.setUint32(28,byteRate,true); v.setUint16(32,blockAlign,true);
+  v.setUint16(34,bits,true); ws(36,"data"); v.setUint32(40,bytes.length,true);
+  new Uint8Array(buf,44).set(bytes);
+  return URL.createObjectURL(new Blob([buf],{type:"audio/wav"}));
+}
+/* nettoie le texte pour la lecture (retire markdown/symboles) */
+function cleanForTTS(t){ return t.replace(/[*#`_>]/g," ").replace(/\[(\d+)\]/g,"").replace(/\s+/g," ").trim(); }
+async function speakProf(text){
+  stopSpeak();
+  try{
+    const url = await geminiTTS(cleanForTTS(text));
+    const a = new Audio(url); window._profAudio = a; await a.play();
+  }catch(e){
+    speak(text,"A");   // repli sur la voix du navigateur
+  }
+}
+
+/* --- rendu markdown leger + echappement --- */
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function mdToHtml(t){
+  let s=esc(t);
+  s=s.replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").replace(/`([^`]+)`/g,"<code>$1</code>");
+  return s;
+}
+
+/* --- ECRAN : reglage de la cle --- */
+function keyScreen(){
+  const cur=getKey();
+  h(`<div class="top"><button class="back" onclick="go(home)">←</button><b>⚙️ Activer le prof IA</b></div>
+    <div class="card">
+      <div class="big">Pour discuter avec le prof IA (chat + recherche web + voix naturelle), il te faut une clé Google Gemini <b>gratuite</b>.</div>
+      <ol style="color:var(--mut);font-size:14.5px">
+        <li>Ouvre <b>aistudio.google.com/app/apikey</b></li>
+        <li>Connecte-toi avec ton compte Google</li>
+        <li>Clique <b>« Create API key »</b> (gratuit, sans carte)</li>
+        <li>Copie la clé (elle commence par <b>AIza…</b>) et colle-la ci-dessous</li>
+      </ol>
+      <input type="text" id="keyIn" placeholder="Colle ta clé AIza… ici" value="${cur}" autocomplete="off" spellcheck="false">
+      <div class="row">
+        <button onclick="saveKey()">Enregistrer et discuter</button>
+        ${cur?'<button class="ghost" onclick="clearKey()">Effacer la clé</button>':''}
+      </div>
+      <div class="srcs">🔒 Ta clé reste <b>uniquement sur cet appareil</b> (stockage local du navigateur). Elle n'est envoyée qu'à Google, jamais ailleurs.</div>
+    </div>`);
+}
+function saveKey(){ const v=(document.getElementById("keyIn").value||"").trim(); if(!v){alert("Colle ta clé d'abord.");return;} localStorage.setItem("gemini_key",v); chatHist=[]; renderChat(false); }
+function clearKey(){ localStorage.removeItem("gemini_key"); keyScreen(); }
+
+/* --- ECRAN : chat --- */
+let chatHist=[];          // [{role:'user'|'model', parts:[{text}], sources?}]
+let chatBusy=false;
+function chatScreen(){ if(!getKey()) return keyScreen(); renderChat(false); }
+function renderChat(thinking){
+  if(!getKey()){ keyScreen(); return; }
+  let msgs="";
+  if(chatHist.length===0){
+    msgs=`<div class="msg prof"><div class="b">Salut Léonard ! 👋 Je suis ton prof. Pose-moi une question sur le dév web, Python ou les réseaux, demande-moi de t'expliquer un truc ou de t'interroger comme à l'oral. Je peux aussi chercher sur le web si besoin.</div></div>`;
+  } else {
+    msgs = chatHist.map(m=>{
+      const who = m.role==="user" ? "user" : "prof";
+      const txt = m.parts.map(p=>p.text||"").join("");
+      let src="";
+      if(who==="prof" && m.sources && m.sources.length){
+        src='<div class="srcs">🔎 '+m.sources.slice(0,3).map((u,i)=>`<a href="${u}" target="_blank" rel="noopener">[${i+1}]</a>`).join(" ")+'</div>';
+      }
+      return `<div class="msg ${who}"><div class="b">${mdToHtml(txt)}${src}</div></div>`;
+    }).join("");
+  }
+  const think = thinking ? `<div class="thinking">Le prof réfléchit…</div>` : "";
+  const chips = chatHist.length===0 ? `<div class="chips">
+      <button class="chip" onclick="quickAsk('Interroge-moi sur le modele OSI, une question a la fois.')">🛰️ Quiz OSI</button>
+      <button class="chip" onclick="quickAsk('Explique-moi simplement les boucles en Python avec un exemple.')">🐍 Boucles Python</button>
+      <button class="chip" onclick="quickAsk('Donne-moi un exercice de PHP sur les formulaires, puis corrige ma reponse.')">🌐 Exo PHP</button>
+      <button class="chip" onclick="quickAsk('Pose-moi une question d oral au hasard sur mes 3 matieres.')">🎲 Au hasard</button>
+    </div>` : "";
+  h(`<div class="top"><button class="back" onclick="go(home)">←</button><b>💬 Prof IA</b>
+       <button class="back" style="margin-left:auto" onclick="go(keyScreen)" title="Réglages">⚙️</button></div>
+     <div class="chatwrap" id="cw">${msgs}${think}${chips}</div>
+     <div class="chatbar">
+       <button class="mic" onclick="micChat()" title="Parler">🎤</button>
+       <input type="text" id="chatInput" placeholder="Écris au prof…" autocomplete="off"
+         onkeydown="if(event.key==='Enter'){event.preventDefault();sendMsg();}">
+       <button onclick="sendMsg()">➤</button>
+     </div>`);
+  window.scrollTo(0, document.body.scrollHeight);
+  const ci=document.getElementById("chatInput"); if(ci && !thinking) ci.focus();
+}
+async function sendMsg(){
+  if(chatBusy) return;
+  const inp=document.getElementById("chatInput"); if(!inp) return;
+  const txt=(inp.value||"").trim(); if(!txt) return;
+  if(!getKey()){ keyScreen(); return; }
+  chatHist.push({ role:"user", parts:[{text:txt}] });
+  chatBusy=true; renderChat(true);
+  try{
+    const r = await geminiGenerate(chatHist);
+    chatHist.push({ role:"model", parts:[{text:r.text}], sources:r.sources });
+    chatBusy=false; renderChat(false);
+    speakProf(r.text);
+  }catch(e){
+    chatHist.push({ role:"model", parts:[{text:"⚠️ "+e.message+"\n\nVérifie ta clé et ton quota dans ⚙️ Réglages."}] });
+    chatBusy=false; renderChat(false);
+  }
+}
+function quickAsk(t){ const ci=document.getElementById("chatInput"); if(ci){ ci.value=t; sendMsg(); } }
+function micChat(){ listen(t=>{ const ci=document.getElementById("chatInput"); if(ci){ ci.value=t; sendMsg(); } }); }
 
 home();
 </script>
