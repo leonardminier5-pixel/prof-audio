@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Défis PSTB">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%236c5ce7'/%3E%3Ctext x='50' y='70' font-size='58' text-anchor='middle'%3E%F0%9F%8E%AF%3C/text%3E%3C/svg%3E">
+<title>Défis PSTB — Entraînement</title>
+<style>
+  :root{
+    --bg:#0d0b1e; --bg2:#16132e; --card:#1c1838; --card2:#241f47;
+    --txt:#eceafc; --mut:#9b95c9; --acc:#6c5ce7; --acc2:#a29bfe;
+    --ok:#2ecc71; --ko:#ff6b6b; --gold:#ffd93d; --line:#2e2a52;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:radial-gradient(120% 80% at 50% 0%,#221a4d 0%,var(--bg) 55%);
+    color:var(--txt); min-height:100vh; -webkit-font-smoothing:antialiased;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  }
+  .wrap{max-width:560px;margin:0 auto;padding:16px 16px 90px}
+  h1,h2,h3{margin:0}
+  .topbar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .topbar .back{background:var(--card);border:none;color:var(--txt);font-size:20px;
+    width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center}
+  .topbar h2{font-size:18px;flex:1}
+  .hud{display:flex;gap:8px;margin-bottom:18px}
+  .stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:10px 8px;text-align:center}
+  .stat .n{font-size:22px;font-weight:800}
+  .stat .l{font-size:11px;color:var(--mut);margin-top:2px}
+  .stat.xp .n{color:var(--acc2)} .stat.streak .n{color:var(--gold)} .stat.rank .n{font-size:15px;color:var(--ok);padding-top:5px}
+  .hero{text-align:center;margin:6px 0 18px}
+  .hero h1{font-size:26px;letter-spacing:.3px}
+  .hero p{color:var(--mut);font-size:14px;margin:8px 0 0}
+  .subj{display:flex;align-items:center;gap:14px;background:var(--card);
+    border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:14px;
+    cursor:pointer;transition:transform .08s,border-color .2s}
+  .subj:active{transform:scale(.98)}
+  .subj .ico{font-size:34px;width:54px;height:54px;border-radius:16px;display:flex;
+    align-items:center;justify-content:center;background:var(--card2);flex:none}
+  .subj .info{flex:1;min-width:0}
+  .subj .info h3{font-size:17px}
+  .subj .info .sub{color:var(--mut);font-size:12.5px;margin-top:3px}
+  .bar{height:8px;border-radius:6px;background:var(--bg2);margin-top:9px;overflow:hidden}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:6px;transition:width .5s}
+  .subj .pct{font-size:13px;color:var(--acc2);font-weight:700;flex:none}
+  .mlist{display:flex;flex-direction:column;gap:10px}
+  .mission{display:flex;align-items:center;gap:12px;background:var(--card);
+    border:1px solid var(--line);border-radius:16px;padding:13px 14px;cursor:pointer;transition:transform .08s}
+  .mission:active{transform:scale(.98)}
+  .mission .badge{width:40px;height:40px;border-radius:12px;background:var(--card2);
+    display:flex;align-items:center;justify-content:center;font-size:18px;flex:none}
+  .mission.done .badge{background:rgba(46,204,113,.18)}
+  .mission .t{flex:1}
+  .mission .t b{font-size:15px}
+  .mission .t span{display:block;color:var(--mut);font-size:12px;margin-top:2px}
+  .mission .stars{font-size:13px;color:var(--gold);letter-spacing:1px;flex:none}
+  .qcount{color:var(--mut);font-size:13px;text-align:center;margin-bottom:6px}
+  .qbar{height:6px;background:var(--bg2);border-radius:5px;overflow:hidden;margin-bottom:18px}
+  .qbar > i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));transition:width .35s}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;margin-bottom:14px}
+  .qtag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+    color:var(--acc2);background:var(--card2);padding:4px 10px;border-radius:20px;margin-bottom:12px}
+  .qtext{font-size:18px;line-height:1.45;font-weight:600}
+  pre{background:#0a0818;border:1px solid var(--line);border-radius:12px;padding:13px;
+    overflow-x:auto;margin:13px 0 0;font-size:13.5px;line-height:1.5;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#d6d2ff}
+  .opts{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+  .opt{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:14px 16px;
+    font-size:15.5px;text-align:left;color:var(--txt);cursor:pointer;transition:.12s;font-family:inherit}
+  .opt:active{transform:scale(.99)}
+  .opt.good{border-color:var(--ok);background:rgba(46,204,113,.14)}
+  .opt.bad{border-color:var(--ko);background:rgba(255,107,107,.12)}
+  .opt code,.qtext code,.fb code{font-family:ui-monospace,Menlo,Consolas,monospace;
+    background:#0a0818;padding:1px 6px;border-radius:6px;font-size:.9em;color:#ffd1a8}
+  .txtin{width:100%;background:#0a0818;border:2px solid var(--line);border-radius:14px;
+    padding:14px 16px;font-size:16px;color:var(--txt);font-family:ui-monospace,Menlo,Consolas,monospace}
+  .txtin:focus{outline:none;border-color:var(--acc2)}
+  .orderbox{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+  .obtn{display:flex;align-items:center;gap:10px;background:var(--card);border:2px solid var(--line);
+    border-radius:13px;padding:12px 14px;font-size:15px;color:var(--txt);cursor:pointer;font-family:inherit;text-align:left}
+  .obtn .num{width:24px;height:24px;border-radius:50%;background:var(--card2);display:flex;
+    align-items:center;justify-content:center;font-size:13px;font-weight:700;flex:none;color:var(--acc2)}
+  .obtn.picked{border-color:var(--acc2);opacity:.45}
+  .slots{display:flex;flex-direction:column;gap:8px;margin:0 0 14px}
+  .slot{display:flex;align-items:center;gap:10px;background:rgba(108,92,231,.1);
+    border:2px dashed var(--line);border-radius:13px;padding:11px 14px;font-size:14px;min-height:46px;color:var(--mut)}
+  .slot.filled{border-style:solid;border-color:var(--acc);color:var(--txt)}
+  .slot.good{border-color:var(--ok);background:rgba(46,204,113,.12)}
+  .slot.bad{border-color:var(--ko);background:rgba(255,107,107,.1)}
+  .slot .num{width:22px;height:22px;border-radius:50%;background:var(--card2);display:flex;
+    align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:none;color:var(--acc2)}
+  .fb{border-radius:16px;padding:15px 16px;margin-bottom:14px;font-size:14.5px;line-height:1.5;display:none}
+  .fb.show{display:block;animation:pop .25s ease}
+  .fb.ok{background:rgba(46,204,113,.13);border:1px solid rgba(46,204,113,.4)}
+  .fb.ko{background:rgba(255,107,107,.11);border:1px solid rgba(255,107,107,.4)}
+  .fb .h{font-weight:800;font-size:16px;margin-bottom:5px;display:flex;align-items:center;gap:8px}
+  .fb.ok .h{color:var(--ok)} .fb.ko .h{color:var(--ko)}
+  @keyframes pop{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}
+  .btn{width:100%;background:var(--acc);border:none;color:#fff;font-size:17px;font-weight:700;
+    padding:16px;border-radius:16px;cursor:pointer;font-family:inherit;transition:.1s}
+  .btn:active{transform:scale(.98)}
+  .btn.ghost{background:var(--card);border:1px solid var(--line)}
+  .btn.gold{background:linear-gradient(90deg,#ffd93d,#ffb84d);color:#3a2e00}
+  .result{text-align:center;padding:18px 0}
+  .result .big{font-size:60px;margin-bottom:6px}
+  .result h1{font-size:24px}
+  .result .score{font-size:42px;font-weight:900;color:var(--gold);margin:14px 0 2px}
+  .result .msg{color:var(--mut);font-size:15px;margin-bottom:22px;line-height:1.5}
+  .confetti{position:fixed;top:-10px;font-size:22px;animation:fall linear forwards;z-index:99;pointer-events:none}
+  @keyframes fall{to{transform:translateY(105vh) rotate(540deg);opacity:.2}}
+  .footnote{text-align:center;color:var(--mut);font-size:12px;margin-top:22px;line-height:1.6}
+  .footnote a{color:var(--acc2)}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--card2);
+    border:1px solid var(--acc);color:var(--txt);padding:11px 18px;border-radius:30px;font-size:14px;
+    font-weight:600;z-index:120;opacity:0;transition:.25s;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  .toast.show{opacity:1;bottom:36px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const DATA = {
+  web: {
+    nom:"Dev Web", ico:"🌐",
+    desc:"HTML · CSS · PHP — projet Leboncoin",
+    missions:[
+      { titre:"HTML — la structure", sous:"Les balises de base", ex:[
+        {type:"qcm",tag:"HTML",q:"Quelle balise affiche le <b>titre principal</b> d'une page ?",
+          opts:["<code>&lt;p&gt;</code>","<code>&lt;h1&gt;</code>","<code>&lt;title&gt;</code>","<code>&lt;big&gt;</code>"],a:1,
+          fb:"<code>&lt;h1&gt;</code> = titre le plus important. Ensuite <code>&lt;h2&gt;</code>, <code>&lt;h3&gt;</code>… <code>&lt;title&gt;</code> c'est juste le nom dans l'onglet."},
+        {type:"trou",tag:"HTML",q:"Complète le lien vers Leboncoin (l'attribut qui contient l'adresse) :",
+          code:"&lt;a ___=\"https://leboncoin.fr\"&gt;Voir l'annonce&lt;/a&gt;",rep:["href"],
+          fb:"<code>href</code> (hypertext reference) = la destination du lien. Sans lui, le <code>&lt;a&gt;</code> ne mène nulle part."},
+        {type:"qcm",tag:"HTML",q:"Pour insérer la photo d'une annonce, quelle balise ?",
+          opts:["<code>&lt;image&gt;</code>","<code>&lt;img&gt;</code>","<code>&lt;photo&gt;</code>","<code>&lt;pic&gt;</code>"],a:1,
+          fb:"<code>&lt;img src=\"chat.jpg\" alt=\"chaton\"&gt;</code>. <code>src</code> = le fichier, <code>alt</code> = texte de secours."},
+        {type:"trou",tag:"HTML",q:"Une <b>liste à puces</b>. Complète la balise qui ouvre la liste :",
+          code:"&lt;___&gt;\n  &lt;li&gt;Voiture&lt;/li&gt;\n  &lt;li&gt;Vélo&lt;/li&gt;\n&lt;/___&gt;",rep:["ul"],
+          fb:"<code>&lt;ul&gt;</code> = liste à puces. Chaque ligne = <code>&lt;li&gt;</code>. Pour des numéros : <code>&lt;ol&gt;</code>."},
+      ]},
+      { titre:"CSS — l'apparence", sous:"Couleurs, sélecteurs, mise en page", ex:[
+        {type:"qcm",tag:"CSS",q:"Quelle propriété change la <b>couleur du texte</b> ?",
+          opts:["<code>background</code>","<code>font</code>","<code>color</code>","<code>text-color</code>"],a:2,
+          fb:"<code>color</code> = couleur du texte. <code>background-color</code> = couleur de fond."},
+        {type:"trou",tag:"CSS",q:"Pour viser une <b>classe</b> <code>annonce</code> en CSS, complète le symbole :",
+          code:"___annonce {\n  color: red;\n}",rep:[".annonce",".",". annonce"],
+          fb:"Un point <code>.</code> pour une classe. Un dièse <code>#</code> pour un id. Retiens : point=classe, dièse=id."},
+        {type:"qcm",tag:"CSS",q:"Comment <b>centrer</b> le texte d'un paragraphe ?",
+          opts:["<code>align: middle</code>","<code>text-align: center</code>","<code>center: true</code>","<code>position: center</code>"],a:1,
+          fb:"<code>text-align: center</code>. Aussi : <code>left</code>, <code>right</code>, <code>justify</code>."},
+        {type:"qcm",tag:"CSS — bug",q:"Cette règle ne marche pas. Où est l'erreur ?",
+          code:"p {\n  color: blue\n  font-size: 16px;\n}",
+          opts:["Il manque un <code>;</code> après <code>blue</code>","<code>color</code> n'existe pas","Il faut des guillemets","Rien"],a:0,
+          fb:"Chaque déclaration CSS finit par <code>;</code>. Règle d'or : un <code>;</code> à la fin de CHAQUE ligne."},
+      ]},
+      { titre:"PHP — la logique", sous:"Variables, echo, formulaires", ex:[
+        {type:"qcm",tag:"PHP",q:"En PHP, toute variable commence par quel symbole ?",
+          opts:["<code>@</code>","<code>#</code>","<code>$</code>","<code>&</code>"],a:2,
+          fb:"<code>$</code> → ex : <code>$prix = 50;</code>. Pas de <code>$</code>, pas de variable."},
+        {type:"trou",tag:"PHP",q:"Quelle instruction <b>affiche</b> du texte en PHP ?",
+          code:"&lt;?php\n  ___ \"Bonjour les annonces !\";\n?&gt;",rep:["echo","print"],
+          fb:"<code>echo</code> affiche. Ex : <code>echo \"Prix : \" . $prix;</code>"},
+        {type:"trou",tag:"PHP",q:"Formulaire en POST. Comment récupérer le champ <code>titre</code> ?",
+          code:"$t = ___['titre'];",rep:["$_POST"],
+          fb:"<code>$_POST['titre']</code> pour un <code>&lt;form method=\"post\"&gt;</code>. En GET : <code>$_GET['titre']</code>."},
+        {type:"qcm",tag:"PHP",q:"Comment écrit-on « si le prix dépasse 100 » ?",
+          opts:["<code>if $prix > 100 then</code>","<code>if ($prix > 100) { }</code>","<code>si ($prix > 100)</code>","<code>when ($prix > 100)</code>"],a:1,
+          fb:"<code>if ($prix > 100) { ... }</code> : condition entre <code>( )</code>, code entre <code>{ }</code>."},
+        {type:"trou",tag:"PHP",q:"Complète la <b>boucle</b> qui répète 5 fois (0 à 4) :",
+          code:"for ($i = 0; $i ___ 5; $i++) {\n  echo $i;\n}",rep:["<","< "],
+          fb:"<code>$i &lt; 5</code> : tant que i &lt; 5. <code>$i++</code> ajoute 1 → i = 0,1,2,3,4 → 5 tours."},
+      ]},
+    ]
+  },
+  python: {
+    nom:"Python", ico:"🐍",
+    desc:"Variables, boucles, fonctions — projet contactbook",
+    missions:[
+      { titre:"Les bases", sous:"print, variables, types", ex:[
+        {type:"trou",tag:"Python",q:"Quelle fonction <b>affiche</b> à l'écran ?",
+          code:"___(\"Bonjour Léonard !\")",rep:["print"],
+          fb:"<code>print()</code> affiche dans la console. Ta meilleure amie pour déboguer."},
+        {type:"trou",tag:"Python",q:"Crée une variable <code>age</code> qui vaut 18 :",
+          code:"age ___ 18",rep:["=","= "],
+          fb:"Un <code>=</code> pour DONNER une valeur. Deux <code>==</code> pour COMPARER. Ne pas confondre !"},
+        {type:"qcm",tag:"Python",q:"Quel est le <b>type</b> de <code>\"bonjour\"</code> ?",
+          opts:["<code>int</code>","<code>str</code> (texte)","<code>float</code>","<code>bool</code>"],a:1,
+          fb:"Entre guillemets = <code>str</code>. <code>18</code>=int, <code>3.5</code>=float, <code>True/False</code>=bool."},
+        {type:"qcm",tag:"Python",q:"Quel est le type de <code>3.5</code> ?",
+          opts:["<code>int</code>","<code>str</code>","<code>float</code>","<code>double</code>"],a:2,
+          fb:"Nombre à virgule = <code>float</code>. Nombre entier = <code>int</code>."},
+      ]},
+      { titre:"Conditions & boucles", sous:"if, for, while", ex:[
+        {type:"trou",tag:"Python",q:"Complète « si majeur ». Attention au symbole de fin de ligne !",
+          code:"if age &gt;= 18___\n    print(\"Majeur\")",rep:[":"],
+          fb:"Une condition finit par <code>:</code> et le code dessous est INDENTÉ (4 espaces). L'indentation remplace les accolades de PHP."},
+        {type:"trou",tag:"Python",q:"Boucle qui affiche 0 à 4. Complète :",
+          code:"for i in ___(5):\n    print(i)",rep:["range"],
+          fb:"<code>range(5)</code> = 0,1,2,3,4. <code>range(1,4)</code> = 1,2,3."},
+        {type:"qcm",tag:"Python",q:"Que fait <code>while x &lt; 3:</code> ?",
+          opts:["Répète une fois","Répète TANT QUE x &lt; 3","Répète 3 fois pile","Jamais"],a:1,
+          fb:"<code>while</code> = « tant que ». ⚠️ Modifie <code>x</code> dedans, sinon boucle infinie !"},
+        {type:"qcm",tag:"Python — bug",q:"Pourquoi ce code plante ?",
+          code:"if age &gt;= 18:\nprint(\"Majeur\")",
+          opts:["Il manque les <code>()</code>","<code>print</code> n'est pas indenté","Il manque un <code>;</code>","<code>age</code> n'existe pas"],a:1,
+          fb:"Le code dans un <code>if</code> doit être indenté (4 espaces). Sinon → <code>IndentationError</code>. L'erreur n°1 des débutants."},
+      ]},
+      { titre:"Listes, dictionnaires & fonctions", sous:"Comme dans contactbook", ex:[
+        {type:"trou",tag:"Python",q:"<code>contacts = [\"Léo\",\"Francis\",\"Marie\"]</code>. Affiche le <b>premier</b> :",
+          code:"print(contacts[___])",rep:["0"],
+          fb:"On compte à partir de 0 ! <code>contacts[0]</code>=\"Léo\". Le dernier : <code>contacts[-1]</code>."},
+        {type:"qcm",tag:"Python",q:"Pour stocker nom ET numéro associés, quelle structure ?",
+          opts:["Une liste <code>[ ]</code>","Un dictionnaire <code>{ }</code>","Un texte","Un entier"],a:1,
+          fb:"Dictionnaire : <code>{\"nom\":\"Léo\",\"tel\":\"0612\"}</code>, accès par clé <code>c[\"nom\"]</code>. Parfait pour contactbook !"},
+        {type:"trou",tag:"Python",q:"Complète la définition d'une <b>fonction</b> :",
+          code:"___ saluer(nom):\n    print(\"Salut \" + nom)",rep:["def"],
+          fb:"<code>def</code> crée une fonction, appelée ensuite par <code>saluer(\"Léo\")</code>. Évite de réécrire le même code."},
+        {type:"trou",tag:"Python",q:"Comment <b>demander</b> son nom à l'utilisateur ?",
+          code:"nom = ___(\"Ton nom : \")",rep:["input"],
+          fb:"<code>input()</code> récupère le texte tapé (toujours en <code>str</code>). Pour un nombre : <code>int(input())</code>."},
+      ]},
+    ]
+  },
+  reseaux: {
+    nom:"Réseaux", ico:"🛰️",
+    desc:"Le modèle OSI et ses 7 couches",
+    missions:[
+      { titre:"Le modèle OSI — vue d'ensemble", sous:"Les 7 couches", ex:[
+        {type:"qcm",tag:"OSI",q:"Combien de couches compte le modèle OSI ?",
+          opts:["4","5","7","9"],a:2,
+          fb:"7 couches ! Mnémo (bas→haut) : <b>P</b>our <b>L</b>e <b>R</b>éseau <b>T</b>out <b>S</b>e <b>P</b>asse <b>A</b>utomatiquement → Physique, Liaison, Réseau, Transport, Session, Présentation, Application."},
+        {type:"ordre",tag:"OSI",q:"Remets les 7 couches de la <b>couche 1 (basse)</b> à la <b>7 (haute)</b> :",
+          items:["1 · Physique","2 · Liaison","3 · Réseau","4 · Transport","5 · Session","6 · Présentation","7 · Application"],
+          fb:"Physique → Liaison → Réseau → Transport → Session → Présentation → Application. Couche 1 = bits, couche 7 = ton appli."},
+        {type:"qcm",tag:"OSI",q:"La couche 1 (<b>Physique</b>) s'occupe de quoi ?",
+          opts:["Des adresses IP","Des bits/signaux sur le câble","Des mots de passe","Des pages web"],a:1,
+          fb:"Physique = support concret (câble, fibre, wifi) et bits 0/1. Le niveau le plus « matériel »."},
+      ]},
+      { titre:"Qui fait quoi ?", sous:"Associer protocole et couche", ex:[
+        {type:"qcm",tag:"OSI",q:"L'<b>adresse IP</b> et le routage, c'est quelle couche ?",
+          opts:["2 — Liaison","3 — Réseau","4 — Transport","7 — Application"],a:1,
+          fb:"L'IP = couche 3 (Réseau), elle choisit le chemin. Astuce : <b>R</b>éseau → <b>R</b>outage → IP."},
+        {type:"qcm",tag:"OSI",q:"<b>TCP</b> et <b>UDP</b> sont à quelle couche ?",
+          opts:["3 — Réseau","4 — Transport","5 — Session","1 — Physique"],a:1,
+          fb:"TCP/UDP = couche 4 (Transport). TCP = fiable, UDP = rapide sans garantie (jeux, streaming)."},
+        {type:"qcm",tag:"OSI",q:"L'<b>adresse MAC</b> (carte réseau) est à quelle couche ?",
+          opts:["1 — Physique","2 — Liaison","3 — Réseau","6 — Présentation"],a:1,
+          fb:"MAC = couche 2. À retenir : MAC=2 (locale, matérielle), IP=3 (globale, logique)."},
+        {type:"qcm",tag:"OSI",q:"Charger une page en <b>HTTP</b>, quelle couche ?",
+          opts:["4 — Transport","5 — Session","7 — Application","2 — Liaison"],a:2,
+          fb:"HTTP, HTTPS, FTP, mail (SMTP) = couche 7 (Application), celle avec laquelle TU interagis."},
+      ]},
+      { titre:"Le réseau réel", sous:"Switch, routeur, encapsulation", ex:[
+        {type:"qcm",tag:"Réseau",q:"Un <b>routeur</b> opère principalement à quelle couche ?",
+          opts:["1","2","3 — Réseau","7"],a:2,
+          fb:"Routeur = couche 3 : lit les IP et route entre réseaux. <b>R</b>outeur → <b>R</b>éseau."},
+        {type:"qcm",tag:"Réseau",q:"Un <b>switch</b> classique opère à quelle couche ?",
+          opts:["2 — Liaison","3 — Réseau","4 — Transport","5"],a:0,
+          fb:"Switch = couche 2 : utilise les MAC dans le réseau LOCAL. Switch=2, Routeur=3."},
+        {type:"qcm",tag:"Réseau",q:"À l'envoi, chaque couche AJOUTE ses infos. Ça s'appelle… ?",
+          opts:["Le routage","L'encapsulation","Le cryptage","La compression"],a:1,
+          fb:"L'encapsulation : chaque couche emballe avec son en-tête, comme des poupées russes. À l'arrivée on désencapsule."},
+        {type:"qcm",tag:"Réseau",q:"Pourquoi un modèle en couches est-il utile ?",
+          opts:["Pour aller plus vite","Pour découper un problème complexe en parties indépendantes","Pour économiser l'électricité","Pour chiffrer"],a:1,
+          fb:"Chaque couche a UN rôle et évolue sans casser les autres (le wifi a remplacé le câble sans rien changer au-dessus). LE point clé à l'oral."},
+      ]},
+    ]
+  }
+};
+
+const RANKS = [
+  {min:0,nom:"Novice 🌱"},{min:120,nom:"Apprenti 📘"},{min:300,nom:"Confirmé ⚙️"},
+  {min:560,nom:"Expert 🚀"},{min:900,nom:"Maître 👑"}
+];
+function load(){ try{return JSON.parse(localStorage.getItem("defis_pstb")||"{}")}catch(e){return {}} }
+function save(s){ localStorage.setItem("defis_pstb",JSON.stringify(s)); }
+let S = load();
+S.xp = S.xp||0; S.streak = S.streak||0; S.best = S.best||0; S.done = S.done||{};
+function rank(xp){ let r=RANKS[0]; for(const x of RANKS){ if(xp>=x.min) r=x; } return r.nom; }
+function mk(sk,mi){ return sk+"-"+mi; }
+const app = ()=>document.getElementById("app");
+function toast(msg){ const t=document.getElementById("toast"); t.innerHTML=msg; t.classList.add("show");
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),1700); }
+function norm(s){ return (s||"").trim().toLowerCase().replace(/\s+/g," "); }
+function confetti(){ const em=["🎉","✨","⭐","🎊","💜","🔥"];
+  for(let i=0;i<26;i++){ const c=document.createElement("div"); c.className="confetti";
+    c.textContent=em[i%em.length]; c.style.left=Math.random()*100+"vw";
+    c.style.animationDuration=(1.6+Math.random()*1.4)+"s"; c.style.fontSize=(16+Math.random()*16)+"px";
+    document.body.appendChild(c); setTimeout(()=>c.remove(),3200); } }
+
+function home(){
+  const subj = Object.entries(DATA).map(([k,d])=>{
+    const total=d.missions.length; let done=0;
+    d.missions.forEach((m,i)=>{ if(S.done[mk(k,i)]) done++; });
+    const pct=Math.round(done/total*100);
+    return `<div class="subj" onclick="subject('${k}')">
+      <div class="ico">${d.ico}</div>
+      <div class="info"><h3>${d.nom}</h3><div class="sub">${d.desc}</div>
+        <div class="bar"><i style="width:${pct}%"></i></div></div>
+      <div class="pct">${pct}%</div></div>`;
+  }).join("");
+  app().innerHTML = `
+    <div class="hud">
+      <div class="stat xp"><div class="n">${S.xp}</div><div class="l">XP total</div></div>
+      <div class="stat streak"><div class="n">🔥 ${S.streak}</div><div class="l">série</div></div>
+      <div class="stat rank"><div class="n">${rank(S.xp)}</div><div class="l">niveau</div></div>
+    </div>
+    <div class="hero">
+      <h1>🎯 Salle d'entraînement</h1>
+      <p>Choisis une matière. Bonne réponse = des XP.<br>Vise les 100% partout !</p>
+    </div>
+    ${subj}
+    <div class="footnote">
+      Progression sauvegardée sur cet appareil.<br>
+      Besoin d'un vrai dialogue ? → <a href="prof_audio.html">Prof audio IA</a>
+    </div>`;
+}
+
+function subject(sk){
+  const d=DATA[sk];
+  const list=d.missions.map((m,i)=>{
+    const st=S.done[mk(sk,i)]||0;
+    const stars=st? "★".repeat(st)+"☆".repeat(3-st):"";
+    return `<div class="mission ${st?'done':''}" onclick="startMission('${sk}',${i})">
+      <div class="badge">${st?'✅':(i+1)}</div>
+      <div class="t"><b>${m.titre}</b><span>${m.sous} · ${m.ex.length} défis</span></div>
+      <div class="stars">${stars}</div></div>`;
+  }).join("");
+  app().innerHTML = `
+    <div class="topbar"><button class="back" onclick="home()">←</button><h2>${d.ico} ${d.nom}</h2></div>
+    <div class="mlist">${list}</div>
+    <div class="footnote">3 ★ = sans faute. Refais un défi pour améliorer ton score.</div>`;
+}
+
+let Q=null;
+function startMission(sk,mi){ Q={sk,mi,ex:DATA[sk].missions[mi].ex,idx:0,correct:0,answered:false,pick:[]}; renderQ(); }
+function renderQ(){
+  const e=Q.ex[Q.idx];
+  const prog=Math.round(Q.idx/Q.ex.length*100);
+  let body="";
+  if(e.type==="qcm"){
+    body=`<div class="opts">${e.opts.map((o,i)=>`<button class="opt" id="opt${i}" onclick="answerQcm(${i})">${o}</button>`).join("")}</div>`;
+  } else if(e.type==="trou"){
+    body=`<input class="txtin" id="trouIn" placeholder="ta réponse…" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <button class="btn" style="margin-top:14px" onclick="answerTrou()">Valider</button>`;
+  } else if(e.type==="ordre"){
+    Q.pick=[]; Q.shuffled=e.items.map((t,i)=>({t,i})).sort(()=>Math.random()-.5);
+    body=renderOrder(e);
+  }
+  app().innerHTML = `
+    <div class="topbar"><button class="back" onclick="quitQuiz()">←</button>
+      <h2>${DATA[Q.sk].missions[Q.mi].titre}</h2></div>
+    <div class="qcount">Défi ${Q.idx+1} / ${Q.ex.length}</div>
+    <div class="qbar"><i style="width:${prog}%"></i></div>
+    <div class="card"><span class="qtag">${e.tag}</span><div class="qtext">${e.q}</div>${e.code?`<pre>${e.code}</pre>`:""}</div>
+    <div class="fb" id="fb"></div>
+    ${body}
+    <div id="nextWrap"></div>`;
+  Q.answered=false;
+  const inp=document.getElementById("trouIn");
+  if(inp){ inp.focus(); inp.addEventListener("keydown",ev=>{if(ev.key==="Enter")answerTrou();}); }
+}
+function renderOrder(e){
+  const slots=e.items.map((_,i)=>`<div class="slot" id="slot${i}"><span class="num">${i+1}</span><span class="stxt">—</span></div>`).join("");
+  const choices=Q.shuffled.map((o,si)=>`<button class="obtn" id="ch${si}" onclick="pickOrder(${si})"><span class="num">?</span>${o.t}</button>`).join("");
+  return `<div class="slots">${slots}</div><div class="orderbox" id="orderbox">${choices}</div>`;
+}
+function pickOrder(si){
+  if(Q.answered) return;
+  const e=Q.ex[Q.idx];
+  if(Q.pick.includes(si)) return;
+  Q.pick.push(si);
+  const slot=document.getElementById("slot"+(Q.pick.length-1));
+  slot.classList.add("filled"); slot.querySelector(".stxt").textContent=Q.shuffled[si].t;
+  document.getElementById("ch"+si).classList.add("picked");
+  if(Q.pick.length===e.items.length){
+    let ok=true;
+    Q.pick.forEach((si,pos)=>{ const c=Q.shuffled[si].i===pos;
+      const s=document.getElementById("slot"+pos); s.classList.add(c?"good":"bad"); if(!c)ok=false; });
+    document.getElementById("orderbox").style.display="none";
+    finishQuestion(ok,e);
+  }
+}
+function answerQcm(i){
+  if(Q.answered) return;
+  const e=Q.ex[Q.idx];
+  document.querySelectorAll(".opt").forEach(o=>o.style.pointerEvents="none");
+  document.getElementById("opt"+e.a).classList.add("good");
+  const ok=i===e.a;
+  if(!ok) document.getElementById("opt"+i).classList.add("bad");
+  finishQuestion(ok,e);
+}
+function answerTrou(){
+  if(Q.answered) return;
+  const e=Q.ex[Q.idx];
+  const val=norm(document.getElementById("trouIn").value);
+  if(!val){ toast("Écris une réponse 🙂"); return; }
+  const ok=e.rep.some(r=>norm(r)===val);
+  document.getElementById("trouIn").style.borderColor=ok?"var(--ok)":"var(--ko)";
+  finishQuestion(ok,e,"Réponse attendue : <code>"+e.rep[0]+"</code>");
+}
+function finishQuestion(ok,e,extra){
+  Q.answered=true;
+  if(ok) Q.correct++;
+  const fb=document.getElementById("fb");
+  fb.className="fb show "+(ok?"ok":"ko");
+  const heads=ok?["Bravo ! 🎉","Exact ! ✅","Parfait 💪","Tu gères 🔥","Nickel ⭐"]:["Presque ! 🧐","Pas tout à fait 🤔","On retient ça 📌","Erreur utile 💡"];
+  fb.innerHTML=`<div class="h">${heads[Math.floor(Math.random()*heads.length)]}</div>
+    ${(!ok&&extra)?("<div style='margin-bottom:6px'>"+extra+"</div>"):""}${e.fb}`;
+  fb.scrollIntoView({behavior:"smooth",block:"nearest"});
+  const last=Q.idx===Q.ex.length-1;
+  document.getElementById("nextWrap").innerHTML=`<button class="btn ${last?'gold':''}" onclick="nextQ()">${last?'Voir mon score 🏁':'Suivant →'}</button>`;
+  if(ok){ S.streak++; if(S.streak>S.best)S.best=S.streak; } else S.streak=0;
+  save(S);
+}
+function nextQ(){ if(Q.idx<Q.ex.length-1){ Q.idx++; renderQ(); } else finishMission(); }
+function quitQuiz(){ subject(Q.sk); }
+function finishMission(){
+  const n=Q.ex.length,c=Q.correct,ratio=c/n;
+  const stars=ratio===1?3:ratio>=0.6?2:ratio>0?1:0;
+  const gain=c*10+(stars===3?20:0);
+  const key=mk(Q.sk,Q.mi),prev=S.done[key]||0;
+  if(stars>prev) S.done[key]=stars;
+  const beforeXp=S.xp; S.xp+=gain; save(S);
+  const rankUp=rank(beforeXp)!==rank(S.xp);
+  const big=stars===3?"🏆":stars===2?"🎉":stars===1?"👍":"💪";
+  const msg=stars===3?"Sans-faute ! Tu maîtrises cette mission.":
+            stars===2?"Bien joué ! Refais-la pour viser les 3 étoiles.":
+            stars===1?"Bon début. Relis l'explication et retente !":
+            "Pas de panique, on apprend en se trompant. Recommence !";
+  if(stars>=2) confetti();
+  app().innerHTML=`
+    <div class="result">
+      <div class="big">${big}</div>
+      <h1>${DATA[Q.sk].missions[Q.mi].titre}</h1>
+      <div class="score">${c} / ${n}</div>
+      <div style="font-size:22px;color:var(--gold);letter-spacing:3px;margin-bottom:10px">${"★".repeat(stars)}${"☆".repeat(3-stars)}</div>
+      <div class="msg">+${gain} XP ${rankUp?`<br><b style="color:var(--ok)">🆙 Nouveau niveau : ${rank(S.xp)} !</b>`:""}<br>${msg}</div>
+      <button class="btn" onclick="startMission('${Q.sk}',${Q.mi})">🔁 Refaire</button>
+      <button class="btn ghost" style="margin-top:10px" onclick="nextMission()">Mission suivante →</button>
+      <button class="btn ghost" style="margin-top:10px" onclick="subject('${Q.sk}')">Retour aux missions</button>
+    </div>`;
+}
+function nextMission(){
+  const sk=Q.sk,next=Q.mi+1;
+  if(next<DATA[sk].missions.length) startMission(sk,next);
+  else { toast("🎓 Matière terminée, bravo !"); subject(sk); }
+}
+home();
+</script>
+</body>
+</html>
