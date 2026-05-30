@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Calcul IP">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230984e3'/%3E%3Ctext x='50' y='70' font-size='52' text-anchor='middle'%3E%F0%9F%A7%AE%3C/text%3E%3C/svg%3E">
+<title>Fiche — Calcul d'adresse IP</title>
+<style>
+  :root{
+    --bg:#0d0b1e; --card:#1c1838; --card2:#241f47; --txt:#eceafc; --mut:#9b95c9;
+    --acc:#6c5ce7; --acc2:#a29bfe; --ok:#2ecc71; --gold:#ffd93d; --ko:#ff6b6b;
+    --line:#2e2a52; --net:#0984e3; --netl:#74b9ff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:radial-gradient(120% 80% at 50% 0%,#10294a 0%,var(--bg) 55%);color:var(--txt);
+    min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.5;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  .wrap{max-width:620px;margin:0 auto;padding:18px 16px 80px}
+  h1{font-size:24px;margin:0 0 4px;text-align:center}
+  .lead{text-align:center;color:var(--mut);font-size:14px;margin:0 0 18px}
+  details{background:var(--card);border:1px solid var(--line);border-radius:16px;margin-bottom:12px;overflow:hidden}
+  summary{padding:15px 16px;font-size:16px;font-weight:700;cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px}
+  summary::-webkit-details-marker{display:none}
+  summary .num{width:26px;height:26px;border-radius:8px;background:var(--net);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;flex:none}
+  summary .chev{margin-left:auto;color:var(--mut);transition:transform .2s;font-size:13px}
+  details[open] summary .chev{transform:rotate(90deg)}
+  .body{padding:0 16px 16px}
+  .body p{margin:0 0 10px}
+  ul{margin:6px 0 12px;padding-left:20px} li{margin-bottom:6px}
+  b{color:#fff}
+  code{font-family:ui-monospace,Menlo,Consolas,monospace;background:#0a0818;padding:2px 7px;border-radius:6px;font-size:.88em;color:#ffd1a8}
+  .step{display:flex;gap:12px;margin-bottom:12px}
+  .step .sn{width:28px;height:28px;border-radius:50%;background:var(--card2);color:var(--netl);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex:none;margin-top:1px}
+  .step .st{flex:1}
+  pre{background:#0a0818;border:1px solid var(--line);border-radius:12px;padding:13px;overflow-x:auto;
+    margin:8px 0 12px;font-size:13px;line-height:1.6;font-family:ui-monospace,Menlo,Consolas,monospace;color:#d6d2ff}
+  pre .g{color:var(--ok)} pre .r{color:#ff8a8a} pre .b{color:var(--netl)} pre .c{color:#6f6a9c} pre .y{color:var(--gold)}
+  table{width:100%;border-collapse:collapse;margin:6px 0 12px;font-size:13.5px}
+  th,td{text-align:center;padding:7px 6px;border-bottom:1px solid var(--line)}
+  th{color:var(--acc2);font-size:11.5px;text-transform:uppercase;letter-spacing:.3px}
+  td code{font-size:.82em;padding:1px 5px}
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .box{border-radius:13px;padding:13px 15px;margin:10px 0 14px;font-size:14px}
+  .box .ti{font-weight:800;font-size:13px;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;display:flex;gap:7px;align-items:center}
+  .magic{background:rgba(9,132,227,.12);border:1px solid rgba(9,132,227,.5)} .magic .ti{color:var(--netl)}
+  .oral{background:rgba(255,217,61,.1);border:1px solid rgba(255,217,61,.45)} .oral .ti{color:var(--gold)}
+  .tip{background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.4)} .tip .ti{color:var(--ok)}
+  .warn{background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.4)} .warn .ti{color:var(--ko)}
+  /* calculateur */
+  .calc{background:var(--card);border:1px solid var(--net);border-radius:18px;padding:16px;margin-bottom:14px}
+  .calc h3{margin:0 0 12px;font-size:17px;display:flex;align-items:center;gap:8px}
+  .row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+  .ipin{flex:1;min-width:140px;background:#0a0818;border:2px solid var(--line);border-radius:12px;
+    padding:13px 14px;font-size:17px;color:var(--txt);font-family:ui-monospace,Menlo,Consolas,monospace}
+  .ipin:focus{outline:none;border-color:var(--netl)}
+  .ipin.cidr{flex:none;width:80px;text-align:center}
+  .btn{background:var(--net);border:none;color:#fff;font-size:16px;font-weight:700;padding:13px 18px;
+    border-radius:12px;cursor:pointer;font-family:inherit;transition:.1s}
+  .btn:active{transform:scale(.97)}
+  .btn.full{width:100%;margin-top:4px} .btn.ghost{background:var(--card2);border:1px solid var(--line)}
+  .out{margin-top:12px;display:none}
+  .out.show{display:block;animation:fade .25s}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .res{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px}
+  .res:last-child{border-bottom:none}
+  .res .k{color:var(--mut)} .res .v{font-family:ui-monospace,Menlo,Consolas,monospace;font-weight:700;text-align:right}
+  .res .v.net{color:var(--netl)} .res .v.bc{color:#ff8a8a} .res .v.use{color:var(--ok)}
+  .err{color:var(--ko);font-size:14px;margin-top:8px;display:none}
+  .err.show{display:block}
+  /* generateur */
+  .qz{background:var(--card2);border-radius:12px;padding:14px;margin-top:8px;font-size:15px;text-align:center}
+  .qz .ip{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:22px;font-weight:800;color:var(--netl);margin:6px 0 12px}
+  .footer{text-align:center;color:var(--mut);font-size:12.5px;margin-top:24px;line-height:1.8}
+  .footer a{color:var(--acc2);text-decoration:none;font-weight:600}
+  @media print{body{background:#fff;color:#000}.footer,.calc{display:none}details{border:1px solid #ccc}
+    code,pre{background:#f3f3f3;color:#000}summary{color:#000}b,h1{color:#000}pre .g,pre .r,pre .b,pre .y{color:#000}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🧮 Calcul d'adresse IP</h1>
+  <p class="lead">Masques · réseau & broadcast · sous-réseaux (VLSM)<br>Méthode pas-à-pas + calculateur</p>
+
+  <!-- ============ 0. CALCULATEUR ============ -->
+  <div class="calc">
+    <h3>⚡ Calculateur — vérifie tes réponses</h3>
+    <div class="row">
+      <input class="ipin" id="ipIn" placeholder="172.17.24.171" inputmode="decimal" autocomplete="off">
+      <span style="font-size:20px;color:var(--mut)">/</span>
+      <input class="ipin cidr" id="cidrIn" placeholder="28" inputmode="numeric" autocomplete="off">
+    </div>
+    <button class="btn full" onclick="calc()">Calculer</button>
+    <div class="err" id="err"></div>
+    <div class="out" id="out"></div>
+  </div>
+
+  <!-- ============ 1. LES BASES ============ -->
+  <details open>
+    <summary><span class="num">1</span> Les bases : IP, octets, binaire <span class="chev">▸</span></summary>
+    <div class="body">
+      <p>Une adresse <b>IPv4</b> = <b>4 octets</b> séparés par des points : <code>192.168.0.10</code>. Chaque octet va de <b>0 à 255</b> (8 bits) → l'adresse fait <b>32 bits</b> au total.</p>
+      <p>Un octet en binaire = 8 cases, chacune valant une puissance de 2 :</p>
+      <div class="scroll"><table>
+        <tr><th>2⁷</th><th>2⁶</th><th>2⁵</th><th>2⁴</th><th>2³</th><th>2²</th><th>2¹</th><th>2⁰</th></tr>
+        <tr><td><b>128</b></td><td><b>64</b></td><td><b>32</b></td><td><b>16</b></td><td><b>8</b></td><td><b>4</b></td><td><b>2</b></td><td><b>1</b></td></tr>
+      </table></div>
+      <p>On additionne les cases à <b>1</b>. Ex : <code>11000000</code> = 128 + 64 = <b>192</b>. Et <code>11111111</code> = 255.</p>
+      <div class="box tip"><div class="ti">💡 À retenir par cœur</div>
+        La suite des 128 / 64 / 32 / 16 / 8 / 4 / 2 / 1 (on divise par 2 à chaque fois). C'est la base de TOUT le chapitre.</div>
+    </div>
+  </details>
+
+  <!-- ============ 2. MASQUE ============ -->
+  <details>
+    <summary><span class="num">2</span> Le masque & les 8 valeurs <span class="chev">▸</span></summary>
+    <div class="body">
+      <p>Un <b>masque de sous-réseau</b> sépare l'adresse en 2 parties : la partie <b>réseau</b> (les bits à <b>1</b>) et la partie <b>machine</b> (les bits à <b>0</b>). Dans un masque, les 1 sont <b>toujours collés à gauche</b>, puis les 0.</p>
+      <p>Du coup, un octet de masque ne peut prendre que <b>8 valeurs possibles</b> (on remplit les 1 de gauche à droite) :</p>
+      <div class="scroll"><table>
+        <tr><th>Bits à 1</th><th>Binaire</th><th>Valeur</th></tr>
+        <tr><td>1</td><td><code>10000000</code></td><td><b>128</b></td></tr>
+        <tr><td>2</td><td><code>11000000</code></td><td><b>192</b></td></tr>
+        <tr><td>3</td><td><code>11100000</code></td><td><b>224</b></td></tr>
+        <tr><td>4</td><td><code>11110000</code></td><td><b>240</b></td></tr>
+        <tr><td>5</td><td><code>11111000</code></td><td><b>248</b></td></tr>
+        <tr><td>6</td><td><code>11111100</code></td><td><b>252</b></td></tr>
+        <tr><td>7</td><td><code>11111110</code></td><td><b>254</b></td></tr>
+        <tr><td>8</td><td><code>11111111</code></td><td><b>255</b></td></tr>
+      </table></div>
+      <div class="box tip"><div class="ti">💡 Mémo des valeurs</div>
+        <b>128 · 192 · 224 · 240 · 248 · 252 · 254 · 255</b><br>Une valeur de masque hors de cette liste (ex. 200, 130…) est <b>impossible</b>.</div>
+    </div>
+  </details>
+
+  <!-- ============ 3. CIDR ============ -->
+  <details>
+    <summary><span class="num">3</span> Convertir CIDR ⇄ masque <span class="chev">▸</span></summary>
+    <div class="body">
+      <p>La notation <b>CIDR</b> <code>/n</code> = le <b>nombre de bits à 1</b> dans le masque (de gauche à droite).</p>
+      <pre>/24  → 8+8+8+0 bits → <span class="b">255.255.255.0</span>
+/28  → 8+8+8+4 bits → <span class="b">255.255.255.240</span>   <span class="c">(4 bits = 240)</span>
+/19  → 8+8+3+0 bits → <span class="b">255.255.224.0</span>     <span class="c">(3 bits = 224)</span>
+/13  → 8+5+0+0 bits → <span class="b">255.248.0.0</span></pre>
+      <p><b>Méthode :</b> tu remplis les octets de 8 en 8. L'octet « à cheval » prend le reste via le tableau des 8 valeurs.</p>
+      <div class="box warn"><div class="ti">⚠️ Masques impossibles</div>
+        <ul style="margin:4px 0 0">
+          <li><b>255.254.128.0</b> → les 1 ne sont pas continus (<code>…1110.1000…</code>) → alternance interdite.</li>
+          <li><b>255.0.255.0</b> → un trou au milieu → impossible.</li>
+          <li><b>255.256.240.0</b> → 256 n'existe pas (max = 255).</li>
+          <li><b>255.0.0</b> → seulement 3 octets, il en faut 4.</li>
+        </ul></div>
+      <p>Table de référence (octet qui varie + nb de machines) :</p>
+      <div class="scroll"><table id="cidrTable">
+        <tr><th>CIDR</th><th>Masque</th><th>Bloc</th><th>Machines utiles</th></tr>
+      </table></div>
+      <p style="font-size:12.5px;color:var(--mut)">« Bloc » = taille d'un sous-réseau dans l'octet concerné = le <b>nombre magique</b> (voir section 4).</p>
+    </div>
+  </details>
+
+  <!-- ============ 4. RESEAU & BROADCAST ============ -->
+  <details>
+    <summary><span class="num">4</span> Trouver l'adresse réseau & le broadcast <span class="chev">▸</span></summary>
+    <div class="body">
+      <p>C'est <b>l'exercice clé</b>. On te donne une IP + un CIDR, tu dois trouver l'<b>adresse réseau</b> et l'<b>adresse de diffusion (broadcast)</b>.</p>
+      <div class="box magic"><div class="ti">🔑 Le nombre magique</div>
+        <b>Nombre magique = 256 − (valeur du masque dans l'octet à cheval)</b><br>
+        C'est la <b>taille d'un bloc</b>. Les adresses réseau sont toujours des <b>multiples</b> de ce nombre.</div>
+      <div class="step"><span class="sn">1</span><div class="st"><b>Convertis</b> le CIDR en masque.</div></div>
+      <div class="step"><span class="sn">2</span><div class="st">Repère l'<b>octet où commence le premier 0</b> du masque = l'octet de travail.</div></div>
+      <div class="step"><span class="sn">3</span><div class="st">Calcule le <b>nombre magique</b> = 256 − valeur du masque dans cet octet.</div></div>
+      <div class="step"><span class="sn">4</span><div class="st">Trouve le <b>plus grand multiple</b> de ce nombre <b>≤ à la valeur de l'octet</b> dans l'IP → c'est l'<b>adresse réseau</b>.</div></div>
+      <div class="step"><span class="sn">5</span><div class="st"><b>Multiple suivant − 1</b> = <b>broadcast</b>. Les octets <i>après</i> celui de travail : <b>0</b> pour le réseau, <b>255</b> pour le broadcast.</div></div>
+
+      <p style="margin-top:14px"><b>Exemple A — 172.17.24.171 /28</b></p>
+      <pre>/28 → masque <span class="b">255.255.255.240</span>   <span class="c">octet de travail = 4e (171)</span>
+Nombre magique = 256 − 240 = <span class="y">16</span>
+Multiples de 16 ≤ 171 :  10 × 16 = <span class="g">160</span>   (11×16 = 176 &gt; 171)
+→ Réseau    : <span class="g">172.17.24.160</span> /28
+→ Broadcast : 11×16 − 1 = <span class="r">175</span> → <span class="r">172.17.24.175</span> /28
+  1re utilisable .161  ·  dernière utilisable .174  ·  14 machines</pre>
+
+      <p><b>Exemple B — 192.168.211.112 /19</b> (l'octet de travail n'est pas le dernier !)</p>
+      <pre>/19 → masque <span class="b">255.255.224.0</span>    <span class="c">octet de travail = 3e (211)</span>
+Nombre magique = 256 − 224 = <span class="y">32</span>
+Multiples de 32 ≤ 211 :  6 × 32 = <span class="g">192</span>   (7×32 = 224 &gt; 211)
+→ Réseau    : <span class="g">192.168.192.0</span> /19   <span class="c">(4e octet = 0)</span>
+→ Broadcast : 7×32 − 1 = <span class="r">223</span> → <span class="r">192.168.223.255</span> /19  <span class="c">(4e octet = 255)</span></pre>
+      <div class="box tip"><div class="ti">💡 Vérif rapide</div>
+        L'adresse réseau finit toujours par des <b>0</b> dans la partie machine, le broadcast par des <b>1</b> (255). Le broadcast = juste avant le réseau suivant.</div>
+    </div>
+  </details>
+
+  <!-- ============ 5. VLSM ============ -->
+  <details>
+    <summary><span class="num">5</span> Administrer des groupes (VLSM) <span class="chev">▸</span></summary>
+    <div class="body">
+      <p>On te donne une adresse de départ et plusieurs <b>groupes</b> avec un nombre de machines (postes) chacun. Il faut découper la plage pour loger tous les groupes <b>sans qu'ils se chevauchent</b>.</p>
+      <div class="step"><span class="sn">1</span><div class="st">Pour chaque groupe : <b>machines + 2</b> (on réserve l'adresse réseau + le broadcast).</div></div>
+      <div class="step"><span class="sn">2</span><div class="st">Arrondis à la <b>puissance de 2 supérieure ou égale</b> (16, 32, 64, 128…). C'est la <b>taille du bloc</b>.</div></div>
+      <div class="step"><span class="sn">3</span><div class="st"><b>Masque</b> = 32 − l'exposant. Ex : bloc 32 = 2<sup>5</sup> → /(32−5) = <b>/27</b>.</div></div>
+      <div class="step"><span class="sn">4</span><div class="st">Place chaque groupe sur un <b>multiple entier</b> de sa taille de bloc, en évitant les zones déjà prises. <b>Astuce : place les plus gros groupes en premier.</b></div></div>
+
+      <div class="box magic"><div class="ti">🔑 Rappel puissances de 2</div>
+        2³=8 · 2⁴=16 · 2⁵=32 · 2⁶=64 · 2⁷=128 · 2⁸=256<br>
+        bloc 8→/29 · 16→/28 · 32→/27 · 64→/26 · 128→/25 · 256→/24</div>
+
+      <p style="margin-top:14px"><b>Exemple complet — 192.168.0.0 /24</b> (256 adresses, dernier octet libre)</p>
+      <pre>G1 = 24 postes → 24+2 = 26 ≤ <span class="y">32</span> (2⁵) → /27 (bloc 32)
+G2 = 14 postes → 14+2 = 16 ≤ <span class="y">16</span> (2⁴) → /28 (bloc 16)
+G3 = 57 postes → 57+2 = 59 ≤ <span class="y">64</span> (2⁶) → /26 (bloc 64)
+G4 = 63 postes → 63+2 = 65 ≤ <span class="y">128</span>(2⁷) → /25 (bloc 128)</pre>
+      <pre><span class="b">G1 /27</span> (bloc 32)  →  0 × 32 = <span class="g">0</span>
+   Réseau 192.168.0.<span class="g">0</span>  ·  utilisables .1 → .30  ·  Broadcast .<span class="r">31</span>
+<span class="b">G2 /28</span> (bloc 16)  →  2 × 16 = <span class="g">32</span>   <span class="c">(.0–.31 pris par G1)</span>
+   Réseau 192.168.0.<span class="g">32</span> ·  utilisables .33 → .46 ·  Broadcast .<span class="r">47</span>
+<span class="b">G3 /26</span> (bloc 64)  →  1 × 64 = <span class="g">64</span>   <span class="c">(.48–.63 trop petit)</span>
+   Réseau 192.168.0.<span class="g">64</span> ·  utilisables .65 → .126 · Broadcast .<span class="r">127</span>
+<span class="b">G4 /25</span> (bloc 128) →  1 × 128 = <span class="g">128</span>
+   Réseau 192.168.0.<span class="g">128</span>· utilisables .129 → .254· Broadcast .<span class="r">255</span></pre>
+      <div class="box warn"><div class="ti">⚠️ Les erreurs qui coûtent des points</div>
+        <ul style="margin:4px 0 0">
+          <li><b>Multiples ENTIERS uniquement.</b> 0,5 × 32 = 16 → interdit. Un groupe /27 ne peut commencer qu'à 0, 32, 64, 96…</li>
+          <li><b>Pas de chevauchement</b> : vérifie que le bloc ne mord pas sur un groupe déjà placé.</li>
+          <li>Ne pas oublier le <b>+2</b> (réseau + broadcast) avant d'arrondir.</li>
+        </ul></div>
+      <div class="box oral"><div class="ti">🎤 À dire à l'oral</div>
+        « Je calcule la taille de chaque groupe (machines + 2), je l'arrondis à la puissance de 2 supérieure pour obtenir le masque, puis je place les blocs sur des multiples entiers de leur taille, du plus grand au plus petit, sans chevauchement. »</div>
+    </div>
+  </details>
+
+  <!-- ============ 6. GENERATEUR ============ -->
+  <details>
+    <summary><span class="num">6</span> 🎲 Entraînement : génère un exercice <span class="chev">▸</span></summary>
+    <div class="body">
+      <p>Calcule l'adresse réseau et le broadcast à la main, puis vérifie (ou recopie l'IP dans le calculateur en haut) :</p>
+      <div class="qz">
+        <div style="color:var(--mut);font-size:13px">Trouve réseau + broadcast de :</div>
+        <div class="ip" id="genIp">— /—</div>
+        <button class="btn ghost" onclick="genEx()">🎲 Nouvelle adresse</button>
+        <button class="btn" style="margin-left:6px" onclick="revealEx()">Voir la correction</button>
+        <div id="genOut" style="margin-top:12px;display:none"></div>
+      </div>
+    </div>
+  </details>
+
+  <div class="footer">
+    📥 Sur ordi : <b>Imprimer → Enregistrer en PDF</b> pour l'avoir hors-ligne.<br><br>
+    📚 <a href="fiches.html">Fiches générales</a> &nbsp;·&nbsp; 🎯 <a href="exercices.html">Défis</a> &nbsp;·&nbsp; 💬 <a href="prof_audio.html">Prof IA</a>
+  </div>
+</div>
+
+<script>
+/* ---- outils ---- */
+function maskFromCidr(n){ // renvoie [o1,o2,o3,o4]
+  const m=[0,0,0,0];
+  for(let i=0;i<4;i++){ const bits=Math.max(0,Math.min(8,n-i*8)); m[i]=bits===0?0:(256-Math.pow(2,8-bits)); }
+  return m;
+}
+function ipToInt(o){ return ((o[0]<<24)>>>0)+(o[1]<<16)+(o[2]<<8)+o[3]; }
+function intToIp(x){ return [(x>>>24)&255,(x>>>16)&255,(x>>>8)&255,x&255].join("."); }
+function parseIp(s){
+  const p=(s||"").trim().split("."); if(p.length!==4) return null;
+  const o=p.map(x=>{ if(!/^\d+$/.test(x)) return -1; return parseInt(x,10); });
+  if(o.some(v=>v<0||v>255)) return null; return o;
+}
+
+/* ---- calculateur ---- */
+function calc(){
+  const err=document.getElementById("err"), out=document.getElementById("out");
+  err.classList.remove("show"); out.classList.remove("show");
+  const ip=parseIp(document.getElementById("ipIn").value);
+  const n=parseInt(document.getElementById("cidrIn").value,10);
+  if(!ip){ err.textContent="⚠️ Adresse IP invalide (ex. 172.17.24.171)."; err.classList.add("show"); return; }
+  if(isNaN(n)||n<0||n>32){ err.textContent="⚠️ CIDR entre 0 et 32 (ex. 28)."; err.classList.add("show"); return; }
+  const mask=maskFromCidr(n);
+  const maskInt=ipToInt(mask)>>>0;
+  const ipInt=ipToInt(ip)>>>0;
+  const netInt=(ipInt & maskInt)>>>0;
+  const bcInt=(netInt | (~maskInt>>>0))>>>0;
+  const size=Math.pow(2,32-n);
+  const hosts = n>=31 ? 0 : size-2;
+  // octet de travail + nombre magique
+  let wo=0; for(let i=0;i<4;i++){ if(mask[i]!==255){ wo=i; break; } if(i===3) wo=3; }
+  const magic = mask[wo]===255 ? 1 : 256-mask[wo];
+  const rows=[
+    ["Masque", mask.join("."), ""],
+    ["Octet de travail", (wo+1)+"ᵉ octet  ·  nombre magique = "+magic, "use"],
+    ["Adresse réseau", intToIp(netInt)+" /"+n, "net"],
+    ["Broadcast", intToIp(bcInt)+" /"+n, "bc"],
+  ];
+  if(n<=30){
+    rows.push(["1re machine utilisable", intToIp((netInt+1)>>>0), "use"]);
+    rows.push(["Dernière utilisable", intToIp((bcInt-1)>>>0), "use"]);
+    rows.push(["Nb de machines utiles", hosts.toLocaleString("fr"), ""]);
+  } else {
+    rows.push(["Nb de machines utiles", n===31?"0 (liaison point à point)":"0 (hôte unique)", ""]);
+  }
+  out.innerHTML = rows.map(r=>`<div class="res"><span class="k">${r[0]}</span><span class="v ${r[2]}">${r[1]}</span></div>`).join("");
+  out.classList.add("show");
+}
+document.getElementById("cidrIn").addEventListener("keydown",e=>{if(e.key==="Enter")calc();});
+document.getElementById("ipIn").addEventListener("keydown",e=>{if(e.key==="Enter")calc();});
+
+/* ---- table CIDR de référence ---- */
+(function(){
+  const t=document.getElementById("cidrTable");
+  for(let n=8;n<=30;n++){
+    const m=maskFromCidr(n);
+    let wo=0; for(let i=0;i<4;i++){ if(m[i]!==255){ wo=i; break; } if(i===3) wo=3; }
+    const bloc = m[wo]===255?1:256-m[wo];
+    const hosts = (Math.pow(2,32-n)-2);
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><code>/${n}</code></td><td><code>${m.join(".")}</code></td><td><b>${bloc}</b></td><td>${hosts.toLocaleString("fr")}</td>`;
+    t.appendChild(tr);
+  }
+})();
+
+/* ---- générateur d'exercices ---- */
+let GEN=null;
+function genEx(){
+  const ip=[ rnd(1,223), rnd(0,255), rnd(0,255), rnd(0,255) ];
+  if(ip[0]===127) ip[0]=126;
+  const n=rnd(16,30);
+  GEN={ip,n};
+  document.getElementById("genIp").textContent=ip.join(".")+" /"+n;
+  document.getElementById("genOut").style.display="none";
+}
+function rnd(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+function revealEx(){
+  if(!GEN){ genEx(); }
+  const {ip,n}=GEN;
+  const mask=maskFromCidr(n);
+  const maskInt=ipToInt(mask)>>>0, ipInt=ipToInt(ip)>>>0;
+  const netInt=(ipInt&maskInt)>>>0, bcInt=(netInt|(~maskInt>>>0))>>>0;
+  let wo=0; for(let i=0;i<4;i++){ if(mask[i]!==255){ wo=i; break; } if(i===3) wo=3; }
+  const magic=mask[wo]===255?1:256-mask[wo];
+  const o=document.getElementById("genOut");
+  o.style.display="block"; o.style.textAlign="left";
+  o.innerHTML=`<div class="res"><span class="k">Masque</span><span class="v">${mask.join(".")}</span></div>
+    <div class="res"><span class="k">Nombre magique (${wo+1}ᵉ oct.)</span><span class="v use">${magic}</span></div>
+    <div class="res"><span class="k">Adresse réseau</span><span class="v net">${intToIp(netInt)} /${n}</span></div>
+    <div class="res"><span class="k">Broadcast</span><span class="v bc">${intToIp(bcInt)} /${n}</span></div>`;
+}
+genEx();
+</script>
+</body>
+</html>
