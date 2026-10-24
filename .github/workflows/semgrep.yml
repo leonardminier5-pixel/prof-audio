@@ -1,0 +1,39 @@
+name: Semgrep
+
+# Analyse de code statique gratuite (Semgrep Community Edition, règles communautaires p/default).
+# Ajouté par l'audit de sécurité du 24/10/2026. Aucun secret, jeton en lecture seule.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "23 4 * * 1" # chaque lundi, pour profiter des nouvelles règles
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: semgrep-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  semgrep:
+    name: Semgrep CE
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # les PR de Dependabot ne touchent pas au code : inutile de les analyser
+    if: github.actor != 'dependabot[bot]'
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # règle « missing-integrity » écartée : elle signale les icônes en data: URI (faux positifs)
+      - name: Analyse Semgrep (image épinglée par empreinte)
+        run: >-
+          docker run --rm --network=bridge -v "${{ github.workspace }}:/src" -w /src
+          semgrep/semgrep:1.181.1@sha256:3db5c7af55eb1f512eac0abf0ab69a97b52c74b5e9a27314c221aee1a78d7ab2
+          semgrep scan --config p/default --metrics=off --error
+          --exclude node_modules
+          --exclude-rule html.security.audit.missing-integrity.missing-integrity
